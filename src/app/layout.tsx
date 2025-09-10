@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "A Next.js dashboard application",
+  title: "Evide Dashboard",
+  description: "Evide dashboard for managing buses",
 };
 
 export default function RootLayout({
