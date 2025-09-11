@@ -9,7 +9,7 @@ export const MOCK_USERS: User[] = [
 ];
 
 export const MOCK_CREDENTIALS = {
-  admin: "admin123",
+  "admin@evide.com": "admin123",
 };
 
 export const MOCK_BUS_SCREENS: BusScreen[] = [
