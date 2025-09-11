@@ -3,7 +3,6 @@ import { User, BusScreen, ContentItem } from "@/types";
 export const MOCK_USERS: User[] = [
   {
     id: "1",
-    username: "admin",
     email: "admin@evide.com",
     role: "admin",
   },
@@ -11,7 +10,6 @@ export const MOCK_USERS: User[] = [
 
 export const MOCK_CREDENTIALS = {
   admin: "admin123",
-  operator: "operator123",
 };
 
 export const MOCK_BUS_SCREENS: BusScreen[] = [
