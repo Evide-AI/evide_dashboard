@@ -15,11 +15,12 @@ type AuthAction =
   | { type: "LOGIN_SUCCESS"; payload: User }
   | { type: "LOGIN_FAILURE" }
   | { type: "LOGOUT" }
-  | { type: "RESTORE_SESSION"; payload: User };
+  | { type: "RESTORE_SESSION"; payload: User }
+  | { type: "INIT_COMPLETE" };
 
 const initialState: AuthState = {
   user: null,
-  isLoading: false,
+  isLoading: true,
   isAuthenticated: false,
 };
 
@@ -47,6 +48,12 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isAuthenticated: true,
       };
 
+    case "INIT_COMPLETE":
+      return {
+        ...state,
+        isLoading: false,
+      };
+
     default:
       return state;
   }
@@ -71,8 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = JSON.parse(savedUser);
         dispatch({ type: "RESTORE_SESSION", payload: user });
       } catch (error) {
+        document.cookie =
+          "evide-dashboard-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
         localStorage.removeItem("evide-dashboard-user");
       }
+    } else {
+      dispatch({ type: "INIT_COMPLETE" });
     }
   }, []);
 
@@ -90,6 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (user) {
         localStorage.setItem("evide-dashboard-user", JSON.stringify(user));
+        document.cookie = `evide-dashboard-session=${
+          user.id
+        }; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
+
         dispatch({ type: "LOGIN_SUCCESS", payload: user });
         return true;
       }
@@ -101,6 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("evide-dashboard-user");
+    document.cookie =
+      "evide-dashboard-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+
     dispatch({ type: "LOGOUT" });
   };
 
