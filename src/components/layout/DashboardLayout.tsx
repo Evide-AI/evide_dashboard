@@ -25,7 +25,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+
+    // Clear browser history and force fresh navigation
+    window.history.replaceState(null, "", "/login");
+    window.location.href = "/login";
   };
 
   const navigation = [
