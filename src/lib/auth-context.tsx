@@ -8,7 +8,6 @@ import {
   useEffect,
   useReducer,
 } from "react";
-import { MOCK_CREDENTIALS, MOCK_USERS } from "./mock-data";
 
 type AuthAction =
   | { type: "LOGIN_START" }
@@ -36,10 +35,18 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isAuthenticated: true,
       };
     case "LOGIN_FAILURE":
-      return initialState;
+      return {
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      };
 
     case "LOGOUT":
-      return initialState;
+      return {
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+      };
 
     case "RESTORE_SESSION":
       return {
@@ -71,53 +78,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore session on page mount(if already logged in)
   useEffect(() => {
-    const savedUser = localStorage.getItem("evide-dashboard-user");
-
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        dispatch({ type: "RESTORE_SESSION", payload: user });
-      } catch (error) {
-        document.cookie =
-          "evide-dashboard-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-        localStorage.removeItem("evide-dashboard-user");
-      }
-    } else {
-      dispatch({ type: "INIT_COMPLETE" });
-    }
+    checkExistingSession();
   }, []);
+
+  const checkExistingSession = async () => {
+    try {
+      const response = await fetch("/api/auth/me");
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          dispatch({ type: "RESTORE_SESSION", payload: data.user });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Session check failed:", error);
+    }
+    dispatch({ type: "INIT_COMPLETE" });
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: "LOGIN_START" });
 
-    // Dummy API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const expectedPassword =
-      MOCK_CREDENTIALS[email as keyof typeof MOCK_CREDENTIALS];
+      const data = await response.json();
 
-    if (expectedPassword && expectedPassword === password) {
-      const user = MOCK_USERS.find((u) => u.email === email);
-
-      if (user) {
-        localStorage.setItem("evide-dashboard-user", JSON.stringify(user));
-        document.cookie = `evide-dashboard-session=${
-          user.id
-        }; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
-
-        dispatch({ type: "LOGIN_SUCCESS", payload: user });
+      if (data.success && data.user) {
+        dispatch({ type: "LOGIN_SUCCESS", payload: data.user });
         return true;
+      } else {
+        dispatch({ type: "LOGIN_FAILURE" });
+        return false;
       }
+    } catch (error) {
+      console.error("Login failed:", error);
+      dispatch({ type: "LOGIN_FAILURE" });
+      return false;
     }
-
-    dispatch({ type: "LOGIN_FAILURE" });
-    return false;
   };
 
-  const logout = () => {
-    localStorage.removeItem("evide-dashboard-user");
-    document.cookie =
-      "evide-dashboard-session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
 
     dispatch({ type: "LOGOUT" });
   };

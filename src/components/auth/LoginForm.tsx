@@ -17,7 +17,7 @@ export default function LoginForm() {
     const success = await login(formData.email, formData.password);
 
     if (success) {
-      router.push("/dashboard");
+      router.refresh();
     } else {
       setError("Invalid credentials");
     }
