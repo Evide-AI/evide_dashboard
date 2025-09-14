@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../lib/auth-context";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const { login, isLoading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +17,7 @@ export default function LoginForm() {
     const success = await login(formData.email, formData.password);
 
     if (success) {
-      router.refresh();
+      navigate("/dashboard");
     } else {
       setError("Invalid credentials");
     }

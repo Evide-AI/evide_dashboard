@@ -1,10 +1,20 @@
 "use client";
 
-import { useAuth } from "@/lib/auth-context";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useAuth } from "../lib/auth-context";
+import { MOCK_BUS_SCREENS, MOCK_CONTENT } from "../lib/mock-data";
+import DashboardLayout from "../components/layout/DashboardLayout";
 
 export default function DashboardPage() {
   const { isLoading, user } = useAuth();
+
+  // Calculate real statistics from mock data
+  const totalScreens = MOCK_BUS_SCREENS.length;
+  const onlineScreens = MOCK_BUS_SCREENS.filter(
+    (screen) => screen.isOnline
+  ).length;
+  const activeContent = MOCK_CONTENT.filter(
+    (content) => content.isActive
+  ).length;
 
   if (isLoading) {
     return (
@@ -54,7 +64,9 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-slate-600">
                   Total Screens
                 </p>
-                <p className="text-2xl font-bold text-slate-900">12</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {totalScreens}
+                </p>
               </div>
             </div>
           </div>
@@ -80,7 +92,9 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-slate-600">
                   Active Content
                 </p>
-                <p className="text-2xl font-bold text-slate-900">8</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {activeContent}
+                </p>
               </div>
             </div>
           </div>
@@ -106,7 +120,9 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium text-slate-600">
                   Completed Tasks
                 </p>
-                <p className="text-2xl font-bold text-slate-900">24</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {onlineScreens}
+                </p>
               </div>
             </div>
           </div>
