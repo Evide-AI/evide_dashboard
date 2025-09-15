@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useAuth } from "../../lib/auth-context";
+import { useNavigate, Link } from "react-router-dom";
 import {
   HomeIcon,
   PlusIcon,
@@ -20,15 +19,12 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-
-    // Clear browser history and force fresh navigation
-    window.history.replaceState(null, "", "/login");
-    window.location.href = "/login";
+    navigate("/login");
   };
 
   const navigation = [
@@ -45,7 +41,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link
-                  href="/dashboard"
+                  to="/dashboard"
                   className="text-xl font-bold bg-gradient-to-r from-purple-600 to-red-600 bg-clip-text text-transparent cursor-pointer"
                 >
                   Evide Dashboard
@@ -56,7 +52,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className="flex items-center px-3 py-2 text-sm font-medium text-slate-700 hover:text-purple-600 hover:bg-slate-50 rounded-lg transition-all duration-200 cursor-pointer"
                   >
                     <item.icon className="w-4 h-4 mr-2" />
@@ -105,7 +101,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className="flex items-center px-3 py-2 text-base font-medium text-slate-700 hover:text-purple-600 hover:bg-slate-50 rounded-lg transition-all duration-200 cursor-pointer"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

@@ -1,6 +1,7 @@
 "use client";
 
-import { AuthState, User } from "@/types";
+import { AuthState, User } from "../types";
+import { MOCK_USERS, MOCK_CREDENTIALS } from "./mock-data";
 import {
   createContext,
   ReactNode,
@@ -83,14 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkExistingSession = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.user) {
-          dispatch({ type: "RESTORE_SESSION", payload: data.user });
-          return;
-        }
+      const storedUser = localStorage.getItem("auth_user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        dispatch({ type: "RESTORE_SESSION", payload: user });
+        return;
       }
     } catch (error) {
       console.error("Session check failed:", error);
@@ -102,23 +100,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "LOGIN_START" });
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const data = await response.json();
-
-      if (data.success && data.user) {
-        dispatch({ type: "LOGIN_SUCCESS", payload: data.user });
-        return true;
-      } else {
-        dispatch({ type: "LOGIN_FAILURE" });
-        return false;
+      const expectedPassword =
+        MOCK_CREDENTIALS[email as keyof typeof MOCK_CREDENTIALS];
+      if (expectedPassword && expectedPassword === password) {
+        const user = MOCK_USERS.find((u) => u.email === email);
+        if (user) {
+          localStorage.setItem("auth_user", JSON.stringify(user));
+          dispatch({ type: "LOGIN_SUCCESS", payload: user });
+          return true;
+        }
       }
+
+      dispatch({ type: "LOGIN_FAILURE" });
+      return false;
     } catch (error) {
       console.error("Login failed:", error);
       dispatch({ type: "LOGIN_FAILURE" });
@@ -128,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      localStorage.removeItem("auth_user");
     } catch (error) {
       console.error("Logout failed:", error);
     }
