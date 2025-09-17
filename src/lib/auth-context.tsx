@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthState, User } from "../types";
-import { MOCK_USERS, MOCK_CREDENTIALS } from "./mock-data";
+import { adminLogin, getUserProfile, logoutUser } from "./auth-service";
 import {
   createContext,
   ReactNode,
@@ -77,45 +77,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Restore session on page mount(if already logged in)
   useEffect(() => {
-    checkExistingSession();
+    checkExistingSession(); // restoring session if already logged in
   }, []);
 
   const checkExistingSession = async () => {
     try {
-      const storedUser = localStorage.getItem("auth_user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        dispatch({ type: "RESTORE_SESSION", payload: user });
+      const response = await getUserProfile();
+
+      if (response.success && response.user) {
+        dispatch({ type: "RESTORE_SESSION", payload: response.user });
         return;
       }
+
+      dispatch({ type: "INIT_COMPLETE" });
     } catch (error) {
       console.error("Session check failed:", error);
+      dispatch({ type: "INIT_COMPLETE" });
     }
-    dispatch({ type: "INIT_COMPLETE" });
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: "LOGIN_START" });
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await adminLogin(email, password);
 
-      const expectedPassword =
-        MOCK_CREDENTIALS[email as keyof typeof MOCK_CREDENTIALS];
-      if (expectedPassword && expectedPassword === password) {
-        const user = MOCK_USERS.find((u) => u.email === email);
-        if (user) {
-          localStorage.setItem("auth_user", JSON.stringify(user));
-          dispatch({ type: "LOGIN_SUCCESS", payload: user });
-          return true;
+      if (response.success && response.user) {
+        if (response.token) {
+          localStorage.setItem("auth_token", response.token);
         }
-      }
 
-      dispatch({ type: "LOGIN_FAILURE" });
-      return false;
+        dispatch({ type: "LOGIN_SUCCESS", payload: response.user });
+        return true;
+      } else {
+        dispatch({ type: "LOGIN_FAILURE" });
+        return false;
+      }
     } catch (error) {
       console.error("Login failed:", error);
       dispatch({ type: "LOGIN_FAILURE" });
@@ -125,9 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      localStorage.removeItem("auth_user");
+      await logoutUser();
+
+      localStorage.removeItem("auth_token");
     } catch (error) {
       console.error("Logout failed:", error);
+      localStorage.removeItem("auth_token");
     }
 
     dispatch({ type: "LOGOUT" });

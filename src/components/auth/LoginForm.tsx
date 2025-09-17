@@ -1,13 +1,13 @@
-"use client";
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth-context";
+import { useBackendStatus } from "../../hooks/useBackendStatus";
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const { login, isLoading } = useAuth();
+  const { isOnline, isChecking, checkStatus } = useBackendStatus();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,6 +29,34 @@ export default function LoginForm() {
         <div className="text-center">
           <h2 className="text-3xl font-bold text-slate-900">Evide Dashboard</h2>
           <p className="mt-2 text-slate-600">Sign in to your account</p>
+
+          <div className="mt-4 flex items-center justify-center space-x-2">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isChecking
+                  ? "bg-yellow-500 animate-pulse"
+                  : isOnline
+                  ? "bg-green-500"
+                  : "bg-red-500"
+              }`}
+            ></div>
+            <span className="text-xs text-slate-500">
+              {isChecking
+                ? "Checking backend..."
+                : isOnline
+                ? "Backend Connected"
+                : "Backend Offline - Login unavailable"}
+            </span>
+            {!isOnline && !isChecking && (
+              <button
+                type="button"
+                onClick={checkStatus}
+                className="text-xs text-purple-600 hover:text-purple-800 ml-2"
+              >
+                Retry
+              </button>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -44,7 +72,7 @@ export default function LoginForm() {
                 setFormData({ ...formData, email: e.target.value })
               }
               className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-slate-900 placeholder:text-slate-500"
-              placeholder="Enter your email"
+              placeholder="Enter admin email"
             />
           </div>
 
@@ -70,12 +98,23 @@ export default function LoginForm() {
             </div>
           )}
 
+          {!isOnline && !isChecking && (
+            <div className="text-red-600 text-sm bg-red-50 p-4 rounded-xl border border-red-200">
+              Backend server is not available. Please ensure the API server is
+              running.
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !isOnline}
             className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer"
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading
+              ? "Signing in..."
+              : !isOnline
+              ? "Backend Required"
+              : "Sign in"}
           </button>
         </form>
       </div>
