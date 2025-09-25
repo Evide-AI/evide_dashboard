@@ -28,7 +28,6 @@ export const adminLogin = async (
         JSON.stringify({
           id: response.data.user.id,
           email: response.data.user.email,
-          name: response.data.user.name,
           role: response.data.user.role,
           userType: response.data.userType || "admin",
         })

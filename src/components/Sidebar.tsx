@@ -1,10 +1,24 @@
 import { useAuth } from "../lib/auth-context";
-import { Menu, X, Settings, Home, LogOut } from "lucide-react";
+import {
+  Menu,
+  X,
+  Settings,
+  Home,
+  LogOut,
+  Bus,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+} from "lucide-react";
 import { useState } from "react";
+import { useAppDispatch } from "../store/hooks";
+import { openCreateBusModal } from "../store/slices/ui";
 
 export default function Sidebar() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [busMenuOpen, setBusMenuOpen] = useState(false);
+  const dispatch = useAppDispatch();
 
   const handleLogout = () => {
     logout();
@@ -39,11 +53,6 @@ export default function Sidebar() {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">EvideAI</h2>
-          <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-white">
-              {user?.name?.charAt(0).toUpperCase() || "A"}
-            </span>
-          </div>
         </div>
 
         {/* Navigation */}
@@ -58,41 +67,44 @@ export default function Sidebar() {
               Dashboard
             </button>
 
-            {/* Placeholder menu items */}
+            {/* Bus Management Section */}
             <div className="mt-8">
-              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Future Features
-              </p>
-
-              <div className="space-y-1 mt-2">
-                <div className="w-full flex items-center px-4 py-3 text-gray-400 cursor-not-allowed">
-                  <div className="h-5 w-5 mr-3 bg-gray-200 rounded"></div>
-                  <span className="text-sm">Feature 1</span>
+              <button
+                onClick={() => setBusMenuOpen(!busMenuOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center">
+                  <Bus className="h-5 w-5 mr-3" />
+                  <span>Bus Management</span>
                 </div>
+                {busMenuOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
 
-                <div className="w-full flex items-center px-4 py-3 text-gray-400 cursor-not-allowed">
-                  <div className="h-5 w-5 mr-3 bg-gray-200 rounded"></div>
-                  <span className="text-sm">Feature 2</span>
+              {/* Bus Submenu */}
+              {busMenuOpen && (
+                <div className="ml-6 mt-2 space-y-1">
+                  <button
+                    onClick={() => {
+                      dispatch(openCreateBusModal());
+                      setIsOpen(false); // Close mobile sidebar
+                    }}
+                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Plus className="h-4 w-4 mr-3" />
+                    <span className="text-sm">Create Bus</span>
+                  </button>
                 </div>
-
-                <div className="w-full flex items-center px-4 py-3 text-gray-400 cursor-not-allowed">
-                  <div className="h-5 w-5 mr-3 bg-gray-200 rounded"></div>
-                  <span className="text-sm">Feature 3</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </nav>
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-4">
-          {/* User Info */}
-          <div className="mb-4 px-2">
-            <p className="text-sm font-medium text-gray-800">{user?.name}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-          </div>
-
-          {/* Actions */}
           <div className="space-y-2">
             <button
               className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

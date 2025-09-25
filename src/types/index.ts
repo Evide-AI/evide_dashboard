@@ -1,7 +1,6 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
   role: "admin";
 }
 
@@ -18,4 +17,29 @@ export interface AuthResponse {
   token?: string;
   userType?: string;
   authMethod?: "cookie" | "token";
+}
+
+export interface BusData {
+  id: number;
+  bus_number: string;
+  imei_number: string;
+  name: string | null;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusCreationResponse {
+  success: boolean;
+  message: string;
+  data: {
+    bus: BusData;
+  };
+}
+
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  field?: string;
+  stack?: string;
 }

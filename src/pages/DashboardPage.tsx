@@ -1,10 +1,8 @@
-import { useAuth } from "../lib/auth-context";
 import Sidebar from "../components/Sidebar";
+import CreateBusModal from "../components/CreateBusModal";
 import { BarChart3, Users, TrendingUp, Activity } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-
   const stats = [
     {
       name: "Total Users",
@@ -49,9 +47,6 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-semibold text-gray-900">
                   Dashboard
                 </h1>
-                <p className="mt-2 text-sm text-gray-600">
-                  Welcome back, {user?.name}
-                </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">
@@ -179,6 +174,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Modals */}
+      <CreateBusModal />
     </div>
   );
 }

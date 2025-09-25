@@ -11,6 +11,7 @@ import { AuthProvider } from "./lib/auth-context";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import { Toaster } from "sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,8 @@ function App() {
                 />
               </Routes>
             </div>
+
+            <Toaster position="top-right" closeButton richColors />
           </Router>
         </AuthProvider>
       </QueryClientProvider>

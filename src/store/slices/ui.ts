@@ -1,20 +1,22 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-// UI State Interface
 export interface UIState {
   sidebarOpen: boolean;
-  theme: "light" | "dark";
   globalLoading: boolean;
+  modals: {
+    createBus: boolean;
+  };
 }
 
 // Initial state
 const initialState: UIState = {
   sidebarOpen: false,
-  theme: "light",
   globalLoading: false,
+  modals: {
+    createBus: false,
+  },
 };
 
-// UI Slice
 const uiSlice = createSlice({
   name: "ui",
   initialState,
@@ -27,29 +29,27 @@ const uiSlice = createSlice({
       state.sidebarOpen = action.payload;
     },
 
-    // Theme actions
-    toggleTheme: (state) => {
-      state.theme = state.theme === "light" ? "dark" : "light";
-    },
-    setTheme: (state, action: PayloadAction<"light" | "dark">) => {
-      state.theme = action.payload;
-    },
-
     // Global loading
     setGlobalLoading: (state, action: PayloadAction<boolean>) => {
       state.globalLoading = action.payload;
     },
+
+    // Modal actions
+    openCreateBusModal: (state) => {
+      state.modals.createBus = true;
+    },
+    closeCreateBusModal: (state) => {
+      state.modals.createBus = false;
+    },
   },
 });
 
-// Export actions
 export const {
   toggleSidebar,
   setSidebarOpen,
-  toggleTheme,
-  setTheme,
   setGlobalLoading,
+  openCreateBusModal,
+  closeCreateBusModal,
 } = uiSlice.actions;
 
-// Export reducer
 export default uiSlice.reducer;
