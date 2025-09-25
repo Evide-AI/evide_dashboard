@@ -87,7 +87,7 @@ export default function CreateBusModal() {
                 value={busData.bus_number}
                 onChange={handleInputChange("bus_number")}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-slate-900 placeholder:text-slate-500"
-                placeholder="Enter bus number (e.g., EVD-001)"
+                placeholder="Enter bus number (e.g., KL-AB-XXXX)"
               />
             </div>
 

@@ -8,9 +8,10 @@ import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { store } from "./store";
 import { AuthProvider } from "./lib/auth-context";
-import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ProtectedLayout from "./components/layouts/ProtectedLayout";
+import PublicLayout from "./components/layouts/PublicLayout";
 import { Toaster } from "sonner";
 
 const queryClient = new QueryClient({
@@ -28,29 +29,24 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <Router>
-            <div className="App">
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/"
-                  element={<Navigate to="/dashboard" replace />}
-                />
-                <Route
-                  path="*"
-                  element={<Navigate to="/dashboard" replace />}
-                />
-              </Routes>
-            </div>
+            <Routes>
+              {/* Public Routes*/}
+              <Route path="/" element={<PublicLayout />}>
+                <Route path="login" element={<LoginPage />} />
+                <Route index element={<Navigate to="/dashboard" replace />} />
+              </Route>
 
-            <Toaster position="top-right" closeButton richColors />
+              {/* Protected Routes  */}
+              <Route path="/" element={<ProtectedLayout />}>
+                <Route path="dashboard" element={<DashboardPage />} />
+              </Route>
+
+              {/* Catch-all route */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+
+            {/* Sonner Toast Notifications */}
+            <Toaster position="top-right" richColors closeButton />
           </Router>
         </AuthProvider>
       </QueryClientProvider>

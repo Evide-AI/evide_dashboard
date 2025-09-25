@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../lib/auth-context";
 import { Navigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import Loading from "../components/Loading";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -55,14 +56,7 @@ export default function LoginPage() {
 
   // Show loading state during initial authentication check
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    <Loading />;
   }
 
   return (
