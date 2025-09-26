@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch } from "../store/hooks";
-import { openCreateBusModal } from "../store/slices/ui";
+import { openCreateBusModal, openCreateRouteModal } from "../store/slices/ui";
 import { Link } from "react-router-dom";
 
 export default function Sidebar() {
@@ -91,6 +91,7 @@ export default function Sidebar() {
                 <div className="ml-6 mt-2 space-y-1">
                   <Link
                     to="/buses"
+                    onClick={() => setIsOpen(false)}
                     className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                   >
                     <Eye className="h-4 w-4 mr-3" />
@@ -100,12 +101,23 @@ export default function Sidebar() {
                   <button
                     onClick={() => {
                       dispatch(openCreateBusModal());
-                      setIsOpen(false); // Close mobile sidebar
+                      setIsOpen(false);
                     }}
                     className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                   >
                     <Plus className="h-4 w-4 mr-3" />
                     <span className="text-sm">Create Bus</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      dispatch(openCreateRouteModal());
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Plus className="h-4 w-4 mr-3" />
+                    <span className="text-sm">Add Route</span>
                   </button>
                 </div>
               )}

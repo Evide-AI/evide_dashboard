@@ -43,3 +43,50 @@ export interface ApiErrorResponse {
   field?: string;
   stack?: string;
 }
+
+export interface Stop {
+  name: string;
+  latitude: number;
+  longitude: number;
+  travel_time_from_previous_stop_min: number;
+  travel_distance_from_previous_stop: number;
+}
+
+export interface ProcessStopsRequest {
+  stops: Stop[];
+}
+
+export interface ProcessStopsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    route: {
+      id: number;
+      route_name: string | null;
+      total_distance_km: number | null;
+      matchType: string;
+      isExisting: boolean;
+    };
+    stops: {
+      id: number;
+      name: string;
+    }[];
+    routeStops: {
+      id: number;
+      route_id: number;
+      stop_id: number;
+      sequence_order: number;
+    }[];
+    processing: {
+      stopProcessingResults: {
+        name: string;
+        id: number;
+        status: string;
+      }[];
+      totalStops: number;
+      newStopsCreated: number;
+      existingStopsUsed: number;
+      routeStatus: string;
+    };
+  };
+}

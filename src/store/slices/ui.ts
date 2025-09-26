@@ -5,6 +5,7 @@ export interface UIState {
   globalLoading: boolean;
   modals: {
     createBus: boolean;
+    createRoute: boolean;
   };
 }
 
@@ -14,6 +15,7 @@ const initialState: UIState = {
   globalLoading: false,
   modals: {
     createBus: false,
+    createRoute: false,
   },
 };
 
@@ -41,6 +43,13 @@ const uiSlice = createSlice({
     closeCreateBusModal: (state) => {
       state.modals.createBus = false;
     },
+
+    openCreateRouteModal: (state) => {
+      state.modals.createRoute = true;
+    },
+    closeCreateRouteModal: (state) => {
+      state.modals.createRoute = false;
+    },
   },
 });
 
@@ -50,6 +59,8 @@ export const {
   setGlobalLoading,
   openCreateBusModal,
   closeCreateBusModal,
+  openCreateRouteModal,
+  closeCreateRouteModal,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { useCreateBus } from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { closeCreateBusModal } from "../store/slices/ui";
+import { closeCreateBusModal, openCreateRouteModal } from "../store/slices/ui";
 import type { CreateBusRequest } from "../store/buses-api";
 import { toast } from "sonner";
 
@@ -39,6 +39,7 @@ export default function CreateBusModal() {
 
         resetForm();
         dispatch(closeCreateBusModal());
+        dispatch(openCreateRouteModal());
       },
       onError: (error) => {
         toast.error("Failed to create bus", {

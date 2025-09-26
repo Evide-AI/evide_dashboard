@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import CreateBusModal from "../CreateBusModal";
 import Loading from "../Loading";
+import CreateRouteModal from "../CreateRouteModal";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,6 +25,7 @@ export default function ProtectedRoute() {
       </main>
       {/* Global modals available to all protected routes */}
       <CreateBusModal />
+      <CreateRouteModal />
     </div>
   );
 }
