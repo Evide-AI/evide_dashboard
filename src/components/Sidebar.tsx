@@ -9,10 +9,12 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
+  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch } from "../store/hooks";
 import { openCreateBusModal } from "../store/slices/ui";
+import { Link } from "react-router-dom";
 
 export default function Sidebar() {
   const { logout } = useAuth();
@@ -87,6 +89,14 @@ export default function Sidebar() {
               {/* Bus Submenu */}
               {busMenuOpen && (
                 <div className="ml-6 mt-2 space-y-1">
+                  <Link
+                    to="/buses"
+                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Eye className="h-4 w-4 mr-3" />
+                    <span className="text-sm">View Buses</span>
+                  </Link>
+
                   <button
                     onClick={() => {
                       dispatch(openCreateBusModal());

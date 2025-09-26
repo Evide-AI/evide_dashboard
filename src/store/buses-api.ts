@@ -1,5 +1,9 @@
 import axios from "axios";
-import type { ApiErrorResponse, BusCreationResponse } from "../types/index";
+import type {
+  ApiErrorResponse,
+  BusCreationResponse,
+  BusData,
+} from "../types/index";
 import api from "../lib/api";
 
 export interface CreateBusRequest {
@@ -28,4 +32,16 @@ export const createBus = async (
   }
 
   throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+};
+
+export const getBuses = async (): Promise<BusData[]> => {
+  try {
+    const response = await api.get<{ buses: BusData[] }>("/buses");
+    return response.data.buses;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response)
+      throw err.response.data as ApiErrorResponse;
+
+    throw { success: false, message: "Unknown Error" } as ApiErrorResponse;
+  }
 };
