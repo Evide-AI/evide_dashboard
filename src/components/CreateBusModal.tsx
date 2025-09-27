@@ -5,10 +5,12 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateBusModal, openCreateRouteModal } from "../store/slices/ui";
 import type { CreateBusRequest } from "../store/buses-api";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateBusModal() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.ui.modals.createBus);
+  const queryClient = useQueryClient();
 
   const [busData, setBusData] = useState<CreateBusRequest>({
     bus_number: "",
@@ -36,6 +38,9 @@ export default function CreateBusModal() {
           description: `Bus "${data.data.bus.bus_number}" has been added.`,
           duration: 4000,
         });
+
+        // this is invalidate and refetch buses
+        queryClient.invalidateQueries({ queryKey: ["buses"] });
 
         resetForm();
         dispatch(closeCreateBusModal());

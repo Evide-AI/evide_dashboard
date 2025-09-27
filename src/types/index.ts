@@ -29,6 +29,20 @@ export interface BusData {
   updatedAt: string;
 }
 
+export interface BusListResponse {
+  success: boolean;
+  message: string;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  data: {
+    buses: BusData[];
+  };
+}
+
 export interface BusCreationResponse {
   success: boolean;
   message: string;

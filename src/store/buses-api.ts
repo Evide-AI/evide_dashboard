@@ -3,6 +3,7 @@ import type {
   ApiErrorResponse,
   BusCreationResponse,
   BusData,
+  BusListResponse,
   ProcessStopsRequest,
   ProcessStopsResponse,
 } from "../types/index";
@@ -38,8 +39,9 @@ export const createBus = async (
 
 export const getBuses = async (): Promise<BusData[]> => {
   try {
-    const response = await api.get<{ buses: BusData[] }>("/buses");
-    return response.data.buses;
+    // No pagination for now
+    const response = await api.get<BusListResponse>("/buses?all=true");
+    return response.data.data.buses;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response)
       throw err.response.data as ApiErrorResponse;
