@@ -4,6 +4,7 @@ import Sidebar from "../Sidebar";
 import CreateBusModal from "../CreateBusModal";
 import Loading from "../Loading";
 import CreateRouteModal from "../CreateRouteModal";
+import CreateTripModal from "../CreateTripModal";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +27,7 @@ export default function ProtectedRoute() {
       {/* Global modals available to all protected routes */}
       <CreateBusModal />
       <CreateRouteModal />
+      <CreateTripModal />
     </div>
   );
 }

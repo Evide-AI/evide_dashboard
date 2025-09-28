@@ -104,3 +104,57 @@ export interface ProcessStopsResponse {
     };
   };
 }
+
+export interface RouteStopData {
+  id: number;
+  route_id: number;
+  stop_id: number;
+  sequence_order: number;
+  travel_time_from_previous_stop_min: number;
+  travel_distance_from_previous_stop: number;
+  dwell_time_minutes: number;
+  stop: {
+    id: number;
+    name: string;
+    location: any;
+  };
+}
+
+export interface RouteWithStops {
+  id: number;
+  route_name: string | null;
+  total_distance_km: number | null;
+  route_stops: RouteStopData[];
+}
+
+export interface TripStopTime {
+  stop_id: number;
+  approx_arrival_time: string;
+  approx_departure_time: string;
+}
+
+export interface CreateTripRequest {
+  route_id: number;
+  bus_id: number;
+  scheduled_start_time: string;
+  scheduled_end_time: string;
+  trip_type?: "regular" | "express" | "limited";
+  stops: TripStopTime[];
+}
+
+export interface TripCreationResponse {
+  success: boolean;
+  message: string;
+  data: {
+    trip: {
+      id: number;
+      route_id: number;
+      bus_id: number;
+      scheduled_start_time: string;
+      scheduled_end_time: string;
+      trip_type: string;
+      is_active: boolean;
+    };
+    tripStopTimes: TripStopTime[];
+  };
+}

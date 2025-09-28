@@ -4,8 +4,11 @@ import type {
   BusCreationResponse,
   BusData,
   BusListResponse,
+  CreateTripRequest,
   ProcessStopsRequest,
   ProcessStopsResponse,
+  RouteWithStops,
+  TripCreationResponse,
 } from "../types/index";
 import api from "../lib/api";
 
@@ -56,6 +59,41 @@ export const processStops = async (
   try {
     const response = await api.post<ProcessStopsResponse>(
       "/routes/process-stops",
+      data
+    );
+    return response.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+// Route fetching based on route_id with its stops
+export const getRouteWithStops = async (
+  routeId: number
+): Promise<RouteWithStops> => {
+  try {
+    const response = await api.get<{ success: boolean; data: RouteWithStops }>(
+      `/routes/${routeId}/stops`
+    );
+    return response.data.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+// Trip creation
+export const createTrip = async (
+  data: CreateTripRequest
+): Promise<TripCreationResponse> => {
+  try {
+    const response = await api.post<TripCreationResponse>(
+      "/trips/create",
       data
     );
     return response.data;

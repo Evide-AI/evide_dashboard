@@ -13,8 +13,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch } from "../store/hooks";
-import { openCreateBusModal, openCreateRouteModal } from "../store/slices/ui";
+import {
+  openCreateBusModal,
+  openCreateRouteModal,
+  openCreateTripModal,
+} from "../store/slices/ui";
 import { Link } from "react-router-dom";
+import SidebarMenuItem from "./SidebarMenuItem";
 
 export default function Sidebar() {
   const { logout } = useAuth();
@@ -98,27 +103,29 @@ export default function Sidebar() {
                     <span className="text-sm">View Buses</span>
                   </Link>
 
-                  <button
-                    onClick={() => {
-                      dispatch(openCreateBusModal());
-                      setIsOpen(false);
-                    }}
-                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  <SidebarMenuItem
+                    icon={Plus}
+                    onAction={() => dispatch(openCreateBusModal())}
+                    setIsOpen={setIsOpen}
                   >
-                    <Plus className="h-4 w-4 mr-3" />
-                    <span className="text-sm">Create Bus</span>
-                  </button>
+                    Create Bus
+                  </SidebarMenuItem>
 
-                  <button
-                    onClick={() => {
-                      dispatch(openCreateRouteModal());
-                      setIsOpen(false);
-                    }}
-                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  <SidebarMenuItem
+                    icon={Plus}
+                    onAction={() => dispatch(openCreateRouteModal())}
+                    setIsOpen={setIsOpen}
                   >
-                    <Plus className="h-4 w-4 mr-3" />
-                    <span className="text-sm">Add Route</span>
-                  </button>
+                    Add Route
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem
+                    icon={Plus}
+                    onAction={() => dispatch(openCreateTripModal())}
+                    setIsOpen={setIsOpen}
+                  >
+                    Add Trip
+                  </SidebarMenuItem>
                 </div>
               )}
             </div>
@@ -128,13 +135,14 @@ export default function Sidebar() {
         {/* Footer */}
         <div className="border-t border-gray-200 p-4">
           <div className="space-y-2">
-            <button
-              className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              disabled
+            <SidebarMenuItem
+              icon={Settings}
+              setIsOpen={setIsOpen}
+              disabled={true}
+              className="hover:bg-gray-100"
             >
-              <Settings className="h-4 w-4 mr-3" />
-              <span className="text-sm">Settings</span>
-            </button>
+              Settings
+            </SidebarMenuItem>
 
             <button
               onClick={handleLogout}
