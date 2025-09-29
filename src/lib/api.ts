@@ -10,25 +10,20 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for authentication
+// Request interceptor - ensure token is always sent
 api.interceptors.request.use(
   (config) => {
-    // Only add Bearer token if available (fallback for mobile/special cases)
+    // Always add x-include-token header for login requests
+    if (config.url?.includes("/auth/login")) {
+      config.headers["x-include-token"] = "true";
+    }
+
+    // Always try to send Bearer token if available
     const token = localStorage.getItem("auth_token");
     if (token) {
-      const hasValidUser = localStorage.getItem("auth_user");
-      if (hasValidUser) {
-        try {
-          const user = JSON.parse(hasValidUser);
-          if (user.role === "admin" && token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        } catch (e) {
-          // If auth_user is corrupted, use token as fallback
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => {
@@ -36,21 +31,19 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor - handle auth errors
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Clear all auth data on 401
+      // Clear any stored auth data
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
 
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
-      }
+      // Emit custom event for React components to handle
+      window.dispatchEvent(new CustomEvent("auth-token-expired"));
     }
     return Promise.reject(error);
   }

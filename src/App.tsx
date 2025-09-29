@@ -14,6 +14,7 @@ import ProtectedLayout from "./components/layouts/ProtectedLayout";
 import PublicLayout from "./components/layouts/PublicLayout";
 import { Toaster } from "sonner";
 import BusesPage from "./pages/BusesPage";
+import TripsPage from "./pages/TripsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,7 @@ function App() {
               <Route path="/" element={<ProtectedLayout />}>
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="/buses" element={<BusesPage />} />
+                <Route path="/trips" element={<TripsPage />} />
               </Route>
 
               {/* Catch-all route */}

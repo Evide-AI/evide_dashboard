@@ -7,8 +7,12 @@ import type {
   CreateTripRequest,
   ProcessStopsRequest,
   ProcessStopsResponse,
+  RouteData,
+  RouteDataResponse,
   RouteWithStops,
   TripCreationResponse,
+  TripFilters,
+  TripListResponse,
 } from "../types/index";
 import api from "../lib/api";
 
@@ -76,9 +80,22 @@ export const getRouteWithStops = async (
 ): Promise<RouteWithStops> => {
   try {
     const response = await api.get<{ success: boolean; data: RouteWithStops }>(
-      `/routes/${routeId}/stops`
+      `/routes/${routeId}`
     );
     return response.data.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+// Get all routes
+export const getAllRoutes = async (): Promise<RouteData[]> => {
+  try {
+    const response = await api.get<RouteDataResponse>("/routes");
+    return response.data.data.routes;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {
       throw err.response.data as ApiErrorResponse;
@@ -96,6 +113,32 @@ export const createTrip = async (
       "/trips/create",
       data
     );
+    return response.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+export const getTrips = async (
+  filters: TripFilters = {}
+): Promise<TripListResponse> => {
+  try {
+    const params = new URLSearchParams();
+
+    if (filters.route_id)
+      params.append("route_id", filters.route_id.toString());
+    if (filters.is_active !== undefined)
+      params.append("is_active", filters.is_active.toString());
+    if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.page) params.append("page", filters.page.toString());
+    if (filters.orderby) params.append("orderby", filters.orderby);
+    if (filters.order) params.append("order", filters.order);
+    if (filters.all) params.append("all", "true");
+
+    const response = await api.get<TripListResponse>(`/trips?${params}`);
     return response.data;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {

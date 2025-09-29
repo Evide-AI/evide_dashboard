@@ -54,8 +54,19 @@ export interface BusCreationResponse {
 export interface ApiErrorResponse {
   success: false;
   message: string;
+  code:
+    | "VALIDATION_ERROR"
+    | "DUPLICATE_ERROR"
+    | "FOREIGN_KEY_ERROR"
+    | "INTERNAL_ERROR";
+  // Optional fields that may or may not be present
+  errors?: Array<{
+    field: string;
+    message: string;
+    value?: any;
+  }>;
   field?: string;
-  stack?: string;
+  value?: any;
 }
 
 export interface Stop {
@@ -105,13 +116,34 @@ export interface ProcessStopsResponse {
   };
 }
 
+export interface RouteData {
+  id: number;
+  route_name: string;
+  first_stop: {
+    id: number;
+    name: string;
+  };
+  last_stop: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface RouteDataResponse {
+  success: boolean;
+  message: string;
+  data: {
+    routes: RouteData[];
+  };
+}
+
 export interface RouteStopData {
   id: number;
   route_id: number;
   stop_id: number;
   sequence_order: number;
   travel_time_from_previous_stop_min: number;
-  travel_distance_from_previous_stop: number;
+  travel_distance_from_previous_stop: string;
   dwell_time_minutes: number;
   stop: {
     id: number;
@@ -128,9 +160,16 @@ export interface RouteWithStops {
 }
 
 export interface TripStopTime {
+  id?: number;
   stop_id: number;
+  trip_id?: number;
   approx_arrival_time: string;
   approx_departure_time: string;
+  stop?: {
+    id: number;
+    name: string;
+    location?: any;
+  };
 }
 
 export interface CreateTripRequest {
@@ -157,4 +196,41 @@ export interface TripCreationResponse {
     };
     tripStopTimes: TripStopTime[];
   };
+}
+
+export interface TripData {
+  id: number;
+  route_id: number;
+  bus_id: number;
+  scheduled_start_time: string;
+  scheduled_end_time: string;
+  trip_type: string;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  trip_stop_times: TripStopTime[];
+}
+
+export interface TripListResponse {
+  success: boolean;
+  message: string;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  data: {
+    trips: TripData[];
+  };
+}
+
+export interface TripFilters {
+  route_id?: number;
+  is_active?: boolean;
+  limit?: number;
+  page?: number;
+  orderby?: string;
+  order?: "asc" | "desc";
+  all?: boolean;
 }

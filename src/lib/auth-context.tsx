@@ -73,14 +73,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkExistingSession();
+
+    // Listen for token expiration events from API interceptor
+    const handleTokenExpired = () => {
+      dispatch({ type: "LOGOUT" });
+    };
+
+    window.addEventListener("auth-token-expired", handleTokenExpired);
+
+    return () => {
+      window.removeEventListener("auth-token-expired", handleTokenExpired);
+    };
   }, []);
 
   const checkExistingSession = async () => {
     try {
-      // Check for existing user data in localStorage
+      // Check for existing user data and token in localStorage
       const storedUser = localStorage.getItem("auth_user");
+      const storedToken = localStorage.getItem("auth_token");
 
-      if (!storedUser) {
+      if (!storedUser || !storedToken) {
         dispatch({ type: "INIT_COMPLETE" });
         return;
       }
@@ -88,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let userData;
       try {
         userData = JSON.parse(storedUser);
-      } catch (e) {
+      } catch {
         // Invalid stored data, clear it
         localStorage.removeItem("auth_user");
         localStorage.removeItem("auth_token");
@@ -96,19 +108,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Validate that user has admin role
-      if (!userData || userData.role !== "admin") {
+      // Validate user data structure and role
+      if (!userData || !userData.id || userData.role !== "admin") {
         localStorage.removeItem("auth_user");
         localStorage.removeItem("auth_token");
         dispatch({ type: "INIT_COMPLETE" });
         return;
       }
 
-      // Restore session from localStorage (no API call as requested)
+      // Restore session - both user data and token are present
       dispatch({ type: "RESTORE_SESSION", payload: userData });
     } catch (error) {
       console.error("Session check failed:", error);
-      // If session check fails, remove all auth data and continue
+      // Clean up on any session check failure
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
       dispatch({ type: "INIT_COMPLETE" });

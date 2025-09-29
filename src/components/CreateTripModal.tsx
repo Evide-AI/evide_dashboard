@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Search, MapPin, Clock, Route, Bus, Calendar } from "lucide-react";
+import { X, MapPin, Clock, Route, Bus, Calendar } from "lucide-react";
 import {
   useCreateTrip,
+  useGetAllRoutes,
   useGetBuses,
   useGetRouteWithStops,
 } from "../hooks/useBuses";
@@ -9,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateTripModal } from "../store/slices/ui";
 import type { CreateTripRequest, TripStopTime, BusData } from "../types";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateTripModal() {
   const dispatch = useAppDispatch();
@@ -23,34 +25,16 @@ export default function CreateTripModal() {
   );
   const [stopTimes, setStopTimes] = useState<TripStopTime[]>([]);
 
-  // Search state for routes (dummy for now)
-  const [routeSearchQuery, setRouteSearchQuery] = useState("");
-
   const { data: buses } = useGetBuses();
+  const {
+    data: routes,
+    isLoading: routesLoading,
+    error: routesError,
+  } = useGetAllRoutes();
   const { data: selectedRoute } = useGetRouteWithStops(selectedRouteId);
   const createTripMutation = useCreateTrip();
 
-  // Mock routes data for dropdown
-  const mockRoutes = [
-    {
-      id: 1,
-      route_name: "Route A",
-      firstStop: "Airport Terminal",
-      lastStop: "Downtown Station",
-    },
-    {
-      id: 2,
-      route_name: "Route B",
-      firstStop: "City Mall",
-      lastStop: "Tech Park",
-    },
-    {
-      id: 3,
-      route_name: "Route C",
-      firstStop: "Railway Station",
-      lastStop: "University Campus",
-    },
-  ];
+  const queryClient = useQueryClient();
 
   // Initialize stop times when route is selected
   useEffect(() => {
@@ -140,6 +124,9 @@ export default function CreateTripModal() {
           description: `Trip has been scheduled successfully.`,
           duration: 4000,
         });
+        // this is invalidate and refetch trips
+        queryClient.invalidateQueries({ queryKey: ["trips"] });
+
         resetForm();
         dispatch(closeCreateTripModal());
       },
@@ -160,7 +147,6 @@ export default function CreateTripModal() {
     setScheduledEndTime("");
     setTripType("regular");
     setStopTimes([]);
-    setRouteSearchQuery("");
   };
 
   const handleClose = () => {
@@ -169,7 +155,7 @@ export default function CreateTripModal() {
   };
 
   const getRouteDisplayName = (route: any) => {
-    return `${route.firstStop} → ${route.lastStop}`;
+    return `${route.first_stop.name} → ${route.last_stop.name}`;
   };
 
   if (!isOpen) return null;
@@ -247,19 +233,6 @@ export default function CreateTripModal() {
               Select Route *
             </label>
 
-            {/* Route Search (Dummy) */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Search routes by first and last stop (DUMMY)..."
-                value={routeSearchQuery}
-                onChange={(e) => setRouteSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled
-              />
-            </div>
-
             {/* Route Dropdown */}
             <div className="relative">
               <Route className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -272,14 +245,23 @@ export default function CreateTripModal() {
                 }
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                disabled={routesLoading}
               >
-                <option value="">Choose a route...</option>
-                {mockRoutes.map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {getRouteDisplayName(route)}{" "}
-                    {route.route_name && `(${route.route_name})`}
-                  </option>
-                ))}
+                <option value="">
+                  {routesLoading || !routes
+                    ? "Loading routes..."
+                    : routesError
+                    ? "Error loading routes"
+                    : "Choose a route..."}
+                </option>
+                {!routesLoading &&
+                  !routesError &&
+                  routes &&
+                  routes?.map((route) => (
+                    <option key={route.id} value={route.id}>
+                      {getRouteDisplayName(route)}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>

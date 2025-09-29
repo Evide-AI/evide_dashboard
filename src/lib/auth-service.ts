@@ -7,21 +7,13 @@ export const adminLogin = async (
   password: string
 ): Promise<AuthResponse> => {
   try {
-    const response = await api.post<AuthResponse>(
-      "/auth/login",
-      {
-        email,
-        password,
-        userType: "admin",
-      },
-      {
-        headers: {
-          "x-include-token": "true",
-        },
-      }
-    );
+    const response = await api.post<AuthResponse>("/auth/login", {
+      email,
+      password,
+      userType: "admin",
+    });
 
-    // Store user data in localStorage for session persistence
+    // Store user data and token for session persistence
     if (response.data.success && response.data.user) {
       localStorage.setItem(
         "auth_user",
@@ -29,13 +21,14 @@ export const adminLogin = async (
           id: response.data.user.id,
           email: response.data.user.email,
           role: response.data.user.role,
-          userType: response.data.userType || "admin",
         })
       );
 
-      // Only store token if provided (for mobile/fallback)
+      // Always store token - backend requires Bearer token authentication
       if (response.data.token) {
         localStorage.setItem("auth_token", response.data.token);
+      } else {
+        console.warn("No token received from login response");
       }
     }
 
@@ -49,11 +42,12 @@ export const adminLogin = async (
   }
 };
 
+// Logout function - comprehensive cleanup
 export const logoutUser = async (): Promise<AuthResponse> => {
   try {
     const response = await api.post<AuthResponse>("/auth/logout", {});
 
-    // Clear all client-side auth data
+    // Always clear client-side data regardless of server response
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
 

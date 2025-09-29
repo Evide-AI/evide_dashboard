@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, Search, MapPin, Clock, Route } from "lucide-react";
+import { X, Plus, MapPin, Clock, Route } from "lucide-react";
 import { useProcessStops } from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateRouteModal } from "../store/slices/ui";
@@ -10,7 +10,6 @@ export default function CreateRouteModal() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.ui.modals.createRoute);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [stops, setStops] = useState<Stop[]>([
     {
       name: "",
@@ -105,9 +104,10 @@ export default function CreateRouteModal() {
         dispatch(closeCreateRouteModal());
       },
       onError: (error) => {
-        toast.error("Failed to create route", {
+        toast.error(error.message, {
           description:
-            error.message || "Please check your input and try again.",
+            error.errors?.[0]?.message ||
+            "Please check your input and try again.",
           duration: 5000,
         });
       },
@@ -115,7 +115,6 @@ export default function CreateRouteModal() {
   };
 
   const resetForm = () => {
-    setSearchQuery("");
     setStops([
       {
         name: "",
@@ -160,19 +159,6 @@ export default function CreateRouteModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <input
-              type="text"
-              placeholder="Search existing routes (DUMMY)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled
-            />
-          </div>
-
           {/* Stops Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">

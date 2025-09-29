@@ -103,6 +103,15 @@ export default function Sidebar() {
                     <span className="text-sm">View Buses</span>
                   </Link>
 
+                  <Link
+                    to="/trips"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center px-4 py-2 text-left text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Eye className="h-4 w-4 mr-3" />
+                    <span className="text-sm">View Trips</span>
+                  </Link>
+
                   <SidebarMenuItem
                     icon={Plus}
                     onAction={() => dispatch(openCreateBusModal())}

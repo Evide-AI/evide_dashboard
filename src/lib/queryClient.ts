@@ -8,23 +8,31 @@ export const queryClient = new QueryClient({
       // Keep unused data in cache for 10 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes
 
-      // Retry logic: don't retry on client errors (4xx)
+      // Retry logic: don't retry on auth errors (4xx)
       retry: (failureCount, error: any) => {
+        // Don't retry on 401 (auth) or 403 (forbidden) errors
+        if (
+          error?.response?.status === 401 ||
+          error?.response?.status === 403
+        ) {
+          return false;
+        }
+        // Don't retry on other client errors (4xx)
         if (error?.response?.status >= 400 && error?.response?.status < 500) {
-          return false; // Don't retry 4xx errors
+          return false;
         }
         return failureCount < 3; // Retry up to 3 times for other errors
       },
 
       // Refetch on window focus for real-time dashboard updates
       refetchOnWindowFocus: true,
-      // Don't refetch on reconnect
+      // Don't refetch on reconnect to avoid auth issues
       refetchOnReconnect: false,
     },
 
     mutations: {
-      // Retry mutations once on failure
-      retry: 1,
+      // Don't retry mutations on failure to avoid duplicate operations
+      retry: false,
     },
   },
 });
