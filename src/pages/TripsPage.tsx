@@ -139,10 +139,10 @@ const TripsPage = () => {
                       {trip.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Route {trip.route_id}
+                      {trip.route_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Bus {trip.bus_id}
+                      {trip.bus_number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDateTime(trip.scheduled_start_time)}

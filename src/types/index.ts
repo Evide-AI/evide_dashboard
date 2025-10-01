@@ -79,6 +79,8 @@ export interface Stop {
 
 export interface ProcessStopsRequest {
   stops: Stop[];
+  bus_id?: number;
+  bus_ids?: number[];
 }
 
 export interface ProcessStopsResponse {
@@ -102,6 +104,17 @@ export interface ProcessStopsResponse {
       stop_id: number;
       sequence_order: number;
     }[];
+    busLinking?: {
+      totalBusesLinked: number;
+      newlyLinked: number;
+      alreadyLinked: number;
+      details: Array<{
+        bus_id: number;
+        route_id: number;
+        status: "newly_linked" | "already_linked";
+        link_id: number;
+      }>;
+    };
     processing: {
       stopProcessingResults: {
         name: string;
@@ -127,6 +140,11 @@ export interface RouteData {
     id: number;
     name: string;
   };
+  link_info?: {
+    id: number;
+    is_active: boolean;
+    linked_at: string;
+  };
 }
 
 export interface RouteDataResponse {
@@ -134,6 +152,20 @@ export interface RouteDataResponse {
   message: string;
   data: {
     routes: RouteData[];
+  };
+}
+
+export interface RoutesByBusResponse {
+  success: boolean;
+  message: string;
+  data: {
+    bus: {
+      id: number;
+      bus_number: string;
+      name: string;
+    };
+    routes: RouteData[];
+    total: number;
   };
 }
 
@@ -202,6 +234,8 @@ export interface TripData {
   id: number;
   route_id: number;
   bus_id: number;
+  bus_number: string;
+  route_name: string;
   scheduled_start_time: string;
   scheduled_end_time: string;
   trip_type: string;

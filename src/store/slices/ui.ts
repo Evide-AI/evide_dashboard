@@ -8,6 +8,20 @@ export interface UIState {
     createRoute: boolean;
     createTrip: boolean;
   };
+  creationFlow: {
+    route: {
+      fromBusCreation: boolean;
+      linkedBusId: number | null;
+      linkedBusNumber: string | null;
+    };
+    trip: {
+      fromRouteCreation: boolean;
+      linkedBusId: number | null;
+      linkedBusNumber: string | null;
+      linkedRouteId: number | null;
+      linkedRouteName: string | null;
+    };
+  };
 }
 
 // Initial state
@@ -18,6 +32,20 @@ const initialState: UIState = {
     createBus: false,
     createRoute: false,
     createTrip: false,
+  },
+  creationFlow: {
+    route: {
+      fromBusCreation: false,
+      linkedBusId: null,
+      linkedBusNumber: null,
+    },
+    trip: {
+      fromRouteCreation: false,
+      linkedBusId: null,
+      linkedBusNumber: null,
+      linkedRouteId: null,
+      linkedRouteName: null,
+    },
   },
 };
 
@@ -46,18 +74,57 @@ const uiSlice = createSlice({
       state.modals.createBus = false;
     },
 
-    openCreateRouteModal: (state) => {
+    openCreateRouteModal: (
+      state,
+      action: PayloadAction<{ busId?: number; busNumber?: string } | undefined>
+    ) => {
       state.modals.createRoute = true;
+      if (action.payload?.busId) {
+        state.creationFlow.route.fromBusCreation = true;
+        state.creationFlow.route.linkedBusId = action.payload.busId;
+        state.creationFlow.route.linkedBusNumber =
+          action.payload.busNumber || null;
+      }
     },
     closeCreateRouteModal: (state) => {
       state.modals.createRoute = false;
+      // Reset route context
+      state.creationFlow.route.fromBusCreation = false;
+      state.creationFlow.route.linkedBusId = null;
+      state.creationFlow.route.linkedBusNumber = null;
     },
 
-    openCreateTripModal: (state) => {
+    openCreateTripModal: (
+      state,
+      action: PayloadAction<
+        | {
+            busId?: number;
+            busNumber?: string;
+            routeId?: number;
+            routeName?: string;
+          }
+        | undefined
+      >
+    ) => {
       state.modals.createTrip = true;
+      if (action.payload?.busId && action.payload?.routeId) {
+        state.creationFlow.trip.fromRouteCreation = true;
+        state.creationFlow.trip.linkedBusId = action.payload.busId;
+        state.creationFlow.trip.linkedBusNumber =
+          action.payload.busNumber || null;
+        state.creationFlow.trip.linkedRouteId = action.payload.routeId;
+        state.creationFlow.trip.linkedRouteName =
+          action.payload.routeName || null;
+      }
     },
     closeCreateTripModal: (state) => {
       state.modals.createTrip = false;
+      // Reset trip context
+      state.creationFlow.trip.fromRouteCreation = false;
+      state.creationFlow.trip.linkedBusId = null;
+      state.creationFlow.trip.linkedBusNumber = null;
+      state.creationFlow.trip.linkedRouteId = null;
+      state.creationFlow.trip.linkedRouteName = null;
     },
   },
 });

@@ -8,7 +8,7 @@ import type {
   ProcessStopsRequest,
   ProcessStopsResponse,
   RouteData,
-  RouteDataResponse,
+  RoutesByBusResponse,
   RouteWithStops,
   TripCreationResponse,
   TripFilters,
@@ -61,9 +61,13 @@ export const processStops = async (
   data: ProcessStopsRequest
 ): Promise<ProcessStopsResponse> => {
   try {
+    const payload: any = { stops: data.stops };
+    if (data.bus_id) payload.bus_id = data.bus_id;
+    if (data.bus_ids && data.bus_ids.length > 0) payload.bus_ids = data.bus_ids;
+
     const response = await api.post<ProcessStopsResponse>(
       "/routes/process-stops",
-      data
+      payload
     );
     return response.data;
   } catch (err: any) {
@@ -91,10 +95,12 @@ export const getRouteWithStops = async (
   }
 };
 
-// Get all routes
-export const getAllRoutes = async (): Promise<RouteData[]> => {
+// Get all routes linked to a specific bus
+export const getRoutesByBusId = async (busId: number): Promise<RouteData[]> => {
   try {
-    const response = await api.get<RouteDataResponse>("/routes");
+    const response = await api.get<RoutesByBusResponse>(
+      `/routes/by-bus/${busId}`
+    );
     return response.data.data.routes;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {

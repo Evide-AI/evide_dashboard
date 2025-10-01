@@ -44,7 +44,13 @@ export default function CreateBusModal() {
 
         resetForm();
         dispatch(closeCreateBusModal());
-        dispatch(openCreateRouteModal());
+        // Pass bus ID and bus number to route modal to start the flow
+        dispatch(
+          openCreateRouteModal({
+            busId: data.data.bus.id,
+            busNumber: data.data.bus.bus_number,
+          })
+        );
       },
       onError: (error) => {
         toast.error("Failed to create bus", {

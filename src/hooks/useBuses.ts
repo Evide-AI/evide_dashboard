@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createBus,
   createTrip,
-  getAllRoutes,
+  getRoutesByBusId,
   getBuses,
   getRouteWithStops,
   getTrips,
@@ -54,10 +54,11 @@ export function useGetRouteWithStops(routeId: number | null) {
   });
 }
 
-export function useGetAllRoutes() {
+export function useGetRoutesByBusId(busId: number | null) {
   return useQuery<RouteData[], ApiErrorResponse>({
-    queryKey: ["routes"],
-    queryFn: getAllRoutes,
+    queryKey: ["routes", "by-bus", busId],
+    queryFn: () => getRoutesByBusId(busId!),
+    enabled: !!busId, // Only call when busId is provided
   });
 }
 

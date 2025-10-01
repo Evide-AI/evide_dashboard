@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { X, Plus, MapPin, Clock, Route } from "lucide-react";
-import { useProcessStops } from "../hooks/useBuses";
+import { X, Plus, MapPin, Clock, Route, Bus } from "lucide-react";
+import { useProcessStops, useGetBuses } from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { closeCreateRouteModal } from "../store/slices/ui";
-import type { Stop, ProcessStopsRequest } from "../types";
+import { closeCreateRouteModal, openCreateTripModal } from "../store/slices/ui";
+import type { Stop, ProcessStopsRequest, BusData } from "../types";
 import { toast } from "sonner";
 
 export default function CreateRouteModal() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.ui.modals.createRoute);
+  const routeFlow = useAppSelector((state) => state.ui.creationFlow.route);
+
+  const { data: buses, isLoading: busesLoading } = useGetBuses();
+  const [selectedBusIds, setSelectedBusIds] = useState<number[]>([]);
 
   const [stops, setStops] = useState<Stop[]>([
     {
@@ -79,6 +83,14 @@ export default function CreateRouteModal() {
     return null;
   };
 
+  const toggleBusSelection = (busId: number) => {
+    setSelectedBusIds((prev) =>
+      prev.includes(busId)
+        ? prev.filter((id) => id !== busId)
+        : [...prev, busId]
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -93,15 +105,44 @@ export default function CreateRouteModal() {
 
     const requestData: ProcessStopsRequest = { stops };
 
+    // Add bus_id or bus_ids based on flow
+    if (routeFlow.fromBusCreation && routeFlow.linkedBusId) {
+      requestData.bus_id = routeFlow.linkedBusId;
+    } else if (selectedBusIds.length > 0) {
+      requestData.bus_ids = selectedBusIds;
+    }
+
     processStopsMutation.mutate(requestData, {
       onSuccess: (data) => {
+        const busLinkingMsg = data.data?.busLinking
+          ? ` Linked to ${data.data.busLinking.totalBusesLinked} bus(es).`
+          : "";
+
         toast.success("Route Created Successfully", {
-          description: `Route with ${data.data?.stops.length} stops has been created.`,
+          description: `Route with ${data.data?.stops.length} stops has been created.${busLinkingMsg}`,
           duration: 4000,
         });
 
         resetForm();
         dispatch(closeCreateRouteModal());
+
+        // If from bus creation flow, continue to trip creation
+        if (routeFlow.fromBusCreation && routeFlow.linkedBusId) {
+          // Construct route name from first and last stop
+          const firstStop = data.data?.stops[0]?.name || "Start";
+          const lastStop =
+            data.data?.stops[data.data?.stops.length - 1]?.name || "End";
+          const routeName = `${firstStop} → ${lastStop}`;
+
+          dispatch(
+            openCreateTripModal({
+              busId: routeFlow.linkedBusId,
+              busNumber: routeFlow.linkedBusNumber || undefined,
+              routeId: data.data.route.id,
+              routeName: routeName,
+            })
+          );
+        }
       },
       onError: (error) => {
         toast.error(error.message, {
@@ -159,6 +200,99 @@ export default function CreateRouteModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Bus Selection Section - Only show if NOT from bus creation */}
+          {!routeFlow.fromBusCreation && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center gap-2 mb-3">
+                <Bus className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-medium text-gray-900">
+                  Link Buses (Optional)
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Select buses to link with this route
+              </p>
+
+              {busesLoading ? (
+                <p className="text-sm text-gray-500">Loading buses...</p>
+              ) : buses && buses.length > 0 ? (
+                <div className="space-y-3">
+                  {/* Dropdown for bus selection */}
+                  <div className="relative">
+                    <Bus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
+                    <select
+                      onChange={(e) => {
+                        const busId = Number(e.target.value);
+                        if (busId && !selectedBusIds.includes(busId)) {
+                          toggleBusSelection(busId);
+                          e.target.value = ""; // Reset dropdown
+                        }
+                      }}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      disabled={selectedBusIds.length === buses.length}
+                    >
+                      <option value="">
+                        {selectedBusIds.length === buses.length
+                          ? "All buses selected"
+                          : "Select a bus to add..."}
+                      </option>
+                      {buses
+                        .filter(
+                          (bus: BusData) => !selectedBusIds.includes(bus.id)
+                        )
+                        .map((bus: BusData) => (
+                          <option key={bus.id} value={bus.id}>
+                            {bus.bus_number} {bus.name && `(${bus.name})`}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Selected buses as tags */}
+                  {selectedBusIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedBusIds.map((busId) => {
+                        const bus = buses.find((b: BusData) => b.id === busId);
+                        return bus ? (
+                          <div
+                            key={busId}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                          >
+                            <span>
+                              {bus.bus_number} {bus.name && `(${bus.name})`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleBusSelection(busId)}
+                              className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No buses available</p>
+              )}
+            </div>
+          )}
+
+          {/* Info Banner if from bus creation */}
+          {routeFlow.fromBusCreation && routeFlow.linkedBusId && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <div className="flex items-center gap-2">
+                <Bus className="h-5 w-5 text-blue-600" />
+                <p className="text-sm text-blue-800">
+                  This route will be automatically linked to Bus{" "}
+                  {routeFlow.linkedBusNumber || `ID: ${routeFlow.linkedBusId}`}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Stops Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
@@ -336,8 +470,8 @@ export default function CreateRouteModal() {
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {processStopsMutation.isPending
-                ? "Creating Route..."
-                : "Create Route"}
+                ? "Processing Route..."
+                : "Process Route"}
             </button>
           </div>
         </form>

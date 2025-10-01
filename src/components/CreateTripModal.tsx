@@ -1,20 +1,26 @@
 import { useState, useEffect } from "react";
-import { X, MapPin, Clock, Route, Bus, Calendar } from "lucide-react";
+import { X, MapPin, Clock, Route, Bus, Calendar, Info } from "lucide-react";
 import {
   useCreateTrip,
-  useGetAllRoutes,
+  useGetRoutesByBusId,
   useGetBuses,
   useGetRouteWithStops,
 } from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateTripModal } from "../store/slices/ui";
-import type { CreateTripRequest, TripStopTime, BusData } from "../types";
+import type {
+  CreateTripRequest,
+  TripStopTime,
+  BusData,
+  RouteData,
+} from "../types";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateTripModal() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.ui.modals.createTrip);
+  const tripFlow = useAppSelector((state) => state.ui.creationFlow.trip);
 
   const [selectedBusId, setSelectedBusId] = useState<number | null>(null);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
@@ -26,15 +32,36 @@ export default function CreateTripModal() {
   const [stopTimes, setStopTimes] = useState<TripStopTime[]>([]);
 
   const { data: buses } = useGetBuses();
+
+  // Fetch routes for selected bus (only when in standalone mode and bus is selected)
   const {
     data: routes,
     isLoading: routesLoading,
     error: routesError,
-  } = useGetAllRoutes();
-  const { data: selectedRoute } = useGetRouteWithStops(selectedRouteId);
+  } = useGetRoutesByBusId(!tripFlow.fromRouteCreation ? selectedBusId : null);
+
+  // Only fetch route details if in standalone mode
+  const { data: selectedRoute } = useGetRouteWithStops(
+    tripFlow.fromRouteCreation ? tripFlow.linkedRouteId : selectedRouteId
+  );
   const createTripMutation = useCreateTrip();
 
   const queryClient = useQueryClient();
+
+  // Initialize data from flow context
+  useEffect(() => {
+    if (isOpen && tripFlow.fromRouteCreation) {
+      setSelectedBusId(tripFlow.linkedBusId);
+      setSelectedRouteId(tripFlow.linkedRouteId);
+    }
+  }, [isOpen, tripFlow]);
+
+  // Reset selected route when bus changes (only in standalone mode)
+  useEffect(() => {
+    if (!tripFlow.fromRouteCreation && selectedBusId) {
+      setSelectedRouteId(null);
+    }
+  }, [selectedBusId, tripFlow.fromRouteCreation]);
 
   // Initialize stop times when route is selected
   useEffect(() => {
@@ -154,10 +181,6 @@ export default function CreateTripModal() {
     dispatch(closeCreateTripModal());
   };
 
-  const getRouteDisplayName = (route: any) => {
-    return `${route.first_stop.name} → ${route.last_stop.name}`;
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -177,34 +200,55 @@ export default function CreateTripModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Trip Details Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Bus Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Bus *
-              </label>
-              <div className="relative">
-                <Bus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <select
-                  value={selectedBusId || ""}
-                  onChange={(e) =>
-                    setSelectedBusId(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Choose a bus...</option>
-                  {buses?.map((bus: BusData) => (
-                    <option key={bus.id} value={bus.id}>
-                      {bus.bus_number} {bus.name && `- ${bus.name}`}
-                    </option>
-                  ))}
-                </select>
+          {/* Context Info Banner - Show if from route creation flow */}
+          {tripFlow.fromRouteCreation && (
+            <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+              <div className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-green-600" />
+                <div className="text-sm text-green-800">
+                  <p className="font-medium">Creating trip for:</p>
+                  <p>
+                    Bus:{" "}
+                    {tripFlow.linkedBusNumber || `ID: ${tripFlow.linkedBusId}`}{" "}
+                    | Route:{" "}
+                    {tripFlow.linkedRouteName ||
+                      `ID: ${tripFlow.linkedRouteId}`}
+                  </p>
+                </div>
               </div>
             </div>
+          )}
+
+          {/* Trip Details Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Bus Selection - Only show if NOT from flow */}
+            {!tripFlow.fromRouteCreation && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Bus *
+                </label>
+                <div className="relative">
+                  <Bus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <select
+                    value={selectedBusId || ""}
+                    onChange={(e) =>
+                      setSelectedBusId(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Choose a bus...</option>
+                    {buses?.map((bus: BusData) => (
+                      <option key={bus.id} value={bus.id}>
+                        {bus.bus_number} {bus.name && `- ${bus.name}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Trip Type */}
             <div>
@@ -227,44 +271,50 @@ export default function CreateTripModal() {
             </div>
           </div>
 
-          {/* Route Selection Section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Route *
-            </label>
+          {/* Route Selection Section - Only show if NOT from flow */}
+          {!tripFlow.fromRouteCreation && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Route *
+              </label>
 
-            {/* Route Dropdown */}
-            <div className="relative">
-              <Route className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <select
-                value={selectedRouteId || ""}
-                onChange={(e) =>
-                  setSelectedRouteId(
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-                disabled={routesLoading}
-              >
-                <option value="">
-                  {routesLoading || !routes
-                    ? "Loading routes..."
-                    : routesError
-                    ? "Error loading routes"
-                    : "Choose a route..."}
-                </option>
-                {!routesLoading &&
-                  !routesError &&
-                  routes &&
-                  routes?.map((route) => (
-                    <option key={route.id} value={route.id}>
-                      {getRouteDisplayName(route)}
-                    </option>
-                  ))}
-              </select>
+              {/* Route Dropdown */}
+              <div className="relative">
+                <Route className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <select
+                  value={selectedRouteId || ""}
+                  onChange={(e) =>
+                    setSelectedRouteId(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                  disabled={routesLoading || !selectedBusId}
+                >
+                  <option value="">
+                    {!selectedBusId
+                      ? "Select a bus first..."
+                      : routesLoading
+                      ? "Loading routes..."
+                      : routesError
+                      ? "Error loading routes"
+                      : routes && routes.length === 0
+                      ? "No routes found for this bus"
+                      : "Choose a route..."}
+                  </option>
+                  {!routesLoading &&
+                    !routesError &&
+                    routes &&
+                    routes?.map((route: RouteData) => (
+                      <option key={route.id} value={route.id}>
+                        {route.first_stop.name} → {route.last_stop.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Schedule Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

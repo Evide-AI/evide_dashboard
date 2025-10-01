@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Plus,
   Eye,
+  Route,
 } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch } from "../store/hooks";
@@ -113,19 +114,19 @@ export default function Sidebar() {
                   </Link>
 
                   <SidebarMenuItem
+                    icon={Route}
+                    onAction={() => dispatch(openCreateRouteModal())}
+                    setIsOpen={setIsOpen}
+                  >
+                    Process Route
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem
                     icon={Plus}
                     onAction={() => dispatch(openCreateBusModal())}
                     setIsOpen={setIsOpen}
                   >
                     Create Bus
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem
-                    icon={Plus}
-                    onAction={() => dispatch(openCreateRouteModal())}
-                    setIsOpen={setIsOpen}
-                  >
-                    Add Route
                   </SidebarMenuItem>
 
                   <SidebarMenuItem
