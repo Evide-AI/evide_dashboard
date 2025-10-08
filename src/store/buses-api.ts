@@ -3,6 +3,8 @@ import type {
   ApiErrorResponse,
   BusCreationResponse,
   BusData,
+  BusDetails,
+  BusDetailsResponse,
   BusListResponse,
   CreateTripRequest,
   ProcessStopsRequest,
@@ -146,6 +148,18 @@ export const getTrips = async (
 
     const response = await api.get<TripListResponse>(`/trips?${params}`);
     return response.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+export const getBusDetailsById = async (busId: number): Promise<BusDetails> => {
+  try {
+    const response = await api.get<BusDetailsResponse>(`/buses/${busId}`);
+    return response.data.data.bus;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {
       throw err.response.data as ApiErrorResponse;

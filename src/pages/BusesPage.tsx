@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { useGetBuses } from "../hooks/useBuses";
 import { useAppDispatch } from "../store/hooks";
-import { openCreateBusModal } from "../store/slices/ui";
+import { openBusDetailsModal, openCreateBusModal } from "../store/slices/ui";
 import type { BusData } from "../types";
 import Loading from "../components/Loading";
 
@@ -11,6 +11,10 @@ const BusesPage = () => {
 
   const handleAddBus = () => {
     dispatch(openCreateBusModal());
+  };
+
+  const handleBusClick = (busId: number) => {
+    dispatch(openBusDetailsModal(busId));
   };
 
   return (
@@ -56,7 +60,11 @@ const BusesPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {buses?.map((bus: BusData) => (
-                  <tr key={bus.id} className="hover:bg-gray-50">
+                  <tr
+                    key={bus.id}
+                    onClick={() => handleBusClick(bus.id)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {bus.bus_number}
                     </td>

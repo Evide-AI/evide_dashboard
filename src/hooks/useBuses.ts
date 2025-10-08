@@ -8,6 +8,7 @@ import {
   getTrips,
   processStops,
   type CreateBusRequest,
+  getBusDetailsById,
 } from "../store/buses-api";
 import {
   type ProcessStopsRequest,
@@ -21,6 +22,7 @@ import {
   type TripFilters,
   type TripListResponse,
   type RouteData,
+  type BusDetails,
 } from "../types";
 
 export function useCreateBus() {
@@ -74,5 +76,13 @@ export function useGetTrips(filters: TripFilters = {}) {
   return useQuery<TripListResponse, ApiErrorResponse>({
     queryKey: ["trips", filters],
     queryFn: () => getTrips(filters),
+  });
+}
+
+export function useGetBusDetails(busId: number | null) {
+  return useQuery<BusDetails, ApiErrorResponse>({
+    queryKey: ["bus-details", busId],
+    queryFn: () => getBusDetailsById(busId!),
+    enabled: !!busId,
   });
 }

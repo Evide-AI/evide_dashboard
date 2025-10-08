@@ -268,3 +268,64 @@ export interface TripFilters {
   order?: "asc" | "desc";
   all?: boolean;
 }
+
+// BUS DETAILS TYPES (GET /api/buses/:bus_id) //
+
+export interface BusDetailsRouteStop {
+  id: number;
+  sequence_order: number;
+  travel_time_from_previous_stop_min: number | null;
+  travel_distance_from_previous_stop: number | null;
+  dwell_time_minutes: number;
+  stop: {
+    id: number;
+    name: string;
+    location: any;
+  };
+}
+
+export interface BusDetailsRoute {
+  id: number;
+  route_name: string;
+  total_distance_km: number;
+  route_stops: BusDetailsRouteStop[]; // Ordered by sequence_order
+}
+
+export interface BusDetailsTrip {
+  id: number;
+  route_id: number;
+  scheduled_start_time: string;
+  scheduled_end_time: string;
+  is_active: boolean;
+  trip_type: "regular" | "express" | "limited";
+  route: {
+    id: number;
+    route_name: string;
+    total_distance_km: number;
+    route_stops: BusDetailsRouteStop[];
+  };
+  trip_stop_times: TripStopTime[];
+}
+
+export interface BusDetails {
+  id: number;
+  bus_number: string;
+  imei_number: string;
+  name: string | null;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  routes: BusDetailsRoute[];
+  trips: BusDetailsTrip[];
+}
+
+/**
+ * API response for GET /api/buses/:bus_id
+ */
+export interface BusDetailsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    bus: BusDetails;
+  };
+}

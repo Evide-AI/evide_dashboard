@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { BusDetailsTrip } from "../../types";
 
 export interface UIState {
   sidebarOpen: boolean;
@@ -7,6 +8,8 @@ export interface UIState {
     createBus: boolean;
     createRoute: boolean;
     createTrip: boolean;
+    busDetails: boolean;
+    tripDetails: boolean;
   };
   creationFlow: {
     route: {
@@ -22,6 +25,8 @@ export interface UIState {
       linkedRouteName: string | null;
     };
   };
+  selectedBusId: number | null;
+  selectedTripData: BusDetailsTrip | null;
 }
 
 // Initial state
@@ -32,6 +37,8 @@ const initialState: UIState = {
     createBus: false,
     createRoute: false,
     createTrip: false,
+    busDetails: false,
+    tripDetails: false,
   },
   creationFlow: {
     route: {
@@ -47,6 +54,8 @@ const initialState: UIState = {
       linkedRouteName: null,
     },
   },
+  selectedBusId: null,
+  selectedTripData: null,
 };
 
 const uiSlice = createSlice({
@@ -126,6 +135,26 @@ const uiSlice = createSlice({
       state.creationFlow.trip.linkedRouteId = null;
       state.creationFlow.trip.linkedRouteName = null;
     },
+
+    // Bus Details Modal
+    openBusDetailsModal: (state, action: PayloadAction<number>) => {
+      state.modals.busDetails = true;
+      state.selectedBusId = action.payload;
+    },
+    closeBusDetailsModal: (state) => {
+      state.modals.busDetails = false;
+      state.selectedBusId = null;
+    },
+
+    // Trip details Modal
+    openTripDetailsModal: (state, action: PayloadAction<BusDetailsTrip>) => {
+      state.modals.tripDetails = true;
+      state.selectedTripData = action.payload;
+    },
+    closeTripDetailsModal: (state) => {
+      state.modals.tripDetails = false;
+      state.selectedTripData = null;
+    },
   },
 });
 
@@ -139,6 +168,10 @@ export const {
   closeCreateRouteModal,
   openCreateTripModal,
   closeCreateTripModal,
+  openBusDetailsModal,
+  closeBusDetailsModal,
+  openTripDetailsModal,
+  closeTripDetailsModal,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

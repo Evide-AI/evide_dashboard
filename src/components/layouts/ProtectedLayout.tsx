@@ -5,6 +5,8 @@ import CreateBusModal from "../CreateBusModal";
 import Loading from "../Loading";
 import CreateRouteModal from "../CreateRouteModal";
 import CreateTripModal from "../CreateTripModal";
+import BusDetailsModal from "../BusDetailsModal";
+import TripDetailsModal from "../TripDetailsModal";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +30,8 @@ export default function ProtectedRoute() {
       <CreateBusModal />
       <CreateRouteModal />
       <CreateTripModal />
+      <BusDetailsModal />
+      <TripDetailsModal />
     </div>
   );
 }
