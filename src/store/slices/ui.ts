@@ -27,6 +27,20 @@ export interface UIState {
   };
   selectedBusId: number | null;
   selectedTripData: BusDetailsTrip | null;
+  
+  // Edit mode state
+  editMode: {
+    busDetails: boolean;
+    tripDetails: boolean;
+  };
+  unsavedChanges: {
+    busDetails: boolean;
+    tripDetails: boolean;
+  };
+  pendingNavigation: {
+    from: 'busDetails' | 'tripDetails' | null;
+    to: 'busDetails' | 'tripDetails' | null;
+  };
 }
 
 // Initial state
@@ -56,6 +70,18 @@ const initialState: UIState = {
   },
   selectedBusId: null,
   selectedTripData: null,
+  editMode: {
+    busDetails: false,
+    tripDetails: false,
+  },
+  unsavedChanges: {
+    busDetails: false,
+    tripDetails: false,
+  },
+  pendingNavigation: {
+    from: null,
+    to: null,
+  },
 };
 
 const uiSlice = createSlice({
@@ -155,6 +181,44 @@ const uiSlice = createSlice({
       state.modals.tripDetails = false;
       state.selectedTripData = null;
     },
+
+    // Edit Mode actions
+    enableEditMode: (
+      state,
+      action: PayloadAction<'busDetails' | 'tripDetails'>
+    ) => {
+      state.editMode[action.payload] = true;
+    },
+    disableEditMode: (
+      state,
+      action: PayloadAction<'busDetails' | 'tripDetails'>
+    ) => {
+      state.editMode[action.payload] = false;
+      state.unsavedChanges[action.payload] = false;
+    },
+    setUnsavedChanges: (
+      state,
+      action: PayloadAction<{
+        modal: 'busDetails' | 'tripDetails';
+        hasChanges: boolean;
+      }>
+    ) => {
+      state.unsavedChanges[action.payload.modal] = action.payload.hasChanges;
+    },
+    setPendingNavigation: (
+      state,
+      action: PayloadAction<{
+        from: 'busDetails' | 'tripDetails';
+        to: 'busDetails' | 'tripDetails';
+      }>
+    ) => {
+      state.pendingNavigation.from = action.payload.from;
+      state.pendingNavigation.to = action.payload.to;
+    },
+    clearPendingNavigation: (state) => {
+      state.pendingNavigation.from = null;
+      state.pendingNavigation.to = null;
+    },
   },
 });
 
@@ -172,6 +236,11 @@ export const {
   closeBusDetailsModal,
   openTripDetailsModal,
   closeTripDetailsModal,
+  enableEditMode,
+  disableEditMode,
+  setUnsavedChanges,
+  setPendingNavigation,
+  clearPendingNavigation,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;
