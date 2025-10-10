@@ -21,7 +21,8 @@
 
 3. **Configure environment**:
 
-   - Update `.env` with your API base URL if needed
+   - Update `.env` with your API base URL
+   - VITE_API_BASE_URL=api_url
 
 4. **Start development server**:
 
