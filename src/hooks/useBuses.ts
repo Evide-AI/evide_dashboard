@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createBus,
   createTrip,
@@ -7,6 +7,7 @@ import {
   getRouteWithStops,
   getTrips,
   processStops,
+  updateTrip,
   type CreateBusRequest,
   getBusDetailsById,
 } from "../store/buses-api";
@@ -23,6 +24,8 @@ import {
   type TripListResponse,
   type RouteData,
   type BusDetails,
+  type UpdateTripRequest,
+  type UpdateTripResponse,
 } from "../types";
 
 export function useCreateBus() {
@@ -84,5 +87,21 @@ export function useGetBusDetails(busId: number | null) {
     queryKey: ["bus-details", busId],
     queryFn: () => getBusDetailsById(busId!),
     enabled: !!busId,
+  });
+}
+
+export function useUpdateTrip() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    UpdateTripResponse,
+    ApiErrorResponse,
+    { tripId: number; data: UpdateTripRequest }
+  >({
+    mutationFn: ({ tripId, data }) => updateTrip(tripId, data),
+    onSuccess: () => {
+      // Invalidate bus details to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["bus-details"] });
+    },
   });
 }

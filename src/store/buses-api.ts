@@ -15,6 +15,8 @@ import type {
   TripCreationResponse,
   TripFilters,
   TripListResponse,
+  UpdateTripRequest,
+  UpdateTripResponse,
 } from "../types/index";
 import api from "../lib/api";
 
@@ -160,6 +162,24 @@ export const getBusDetailsById = async (busId: number): Promise<BusDetails> => {
   try {
     const response = await api.get<BusDetailsResponse>(`/buses/${busId}`);
     return response.data.data.bus;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+export const updateTrip = async (
+  tripId: number,
+  data: UpdateTripRequest
+): Promise<UpdateTripResponse> => {
+  try {
+    const response = await api.put<UpdateTripResponse>(
+      `/trips/${tripId}`,
+      data
+    );
+    return response.data;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {
       throw err.response.data as ApiErrorResponse;

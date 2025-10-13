@@ -20,10 +20,11 @@ import {
 } from "../store/slices/ui";
 import { getRouteDisplayName } from "../lib/time-utils";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
+import { useUpdateTrip } from "../hooks/useBuses";
+import type { UpdateTripRequest } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -35,12 +36,12 @@ import { toast } from "sonner";
 
 interface EditableStop {
   // Stop table fields
-  id?: number; // Optional for new stops
+  id?: number; // Optional for new stops, required for existing stops
   name: string;
   latitude: number;
   longitude: number;
 
-  // RouteStop table fields
+  // RouteStop table fields (used for UI calculations and display)
   sequence_order: number;
   travel_time_from_previous_stop_min: number;
   travel_distance_from_previous_stop: number;
@@ -56,7 +57,7 @@ interface TripFormData {
   trip_type: "regular" | "express" | "limited";
   scheduled_start_time: string; // HH:MM:SS
   scheduled_end_time: string; // HH:MM:SS
-  is_active: boolean;
+  // Note: is_active is NOT editable - it's managed by backend cron job
 
   // Route & stops data
   stops: EditableStop[];
@@ -71,19 +72,20 @@ export default function TripDetailsModal() {
     (state) => state.ui.unsavedChanges.tripDetails
   );
 
+  // Mutation hook for updating trip
+  const { mutate: updateTripMutation, isPending: isUpdating } = useUpdateTrip();
+
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [formData, setFormData] = useState<TripFormData>({
     trip_type: "regular",
     scheduled_start_time: "",
     scheduled_end_time: "",
-    is_active: true,
     stops: [],
   });
   const [originalData, setOriginalData] = useState<TripFormData>({
     trip_type: "regular",
     scheduled_start_time: "",
     scheduled_end_time: "",
-    is_active: true,
     stops: [],
   });
 
@@ -130,7 +132,6 @@ export default function TripDetailsModal() {
         trip_type: tripData.trip_type,
         scheduled_start_time: tripData.scheduled_start_time,
         scheduled_end_time: tripData.scheduled_end_time,
-        is_active: tripData.is_active,
         stops: mergedStops,
       };
 
@@ -170,7 +171,8 @@ export default function TripDetailsModal() {
   };
 
   const handleSave = async () => {
-    // Validation
+    if (!tripData) return;
+
     const validationError = validateFormData();
     if (validationError) {
       toast.error("Validation Error", {
@@ -179,15 +181,76 @@ export default function TripDetailsModal() {
       return;
     }
 
-    // Mock save - just show success (we will add endpoint later)
-    toast.success("Trip and route details updated successfully", {
-      description: "All changes have been saved.",
-    });
+    // Build request payload
+    const payload: UpdateTripRequest = {
+      trip: {
+        trip_type: formData.trip_type,
+        scheduled_start_time: formData.scheduled_start_time,
+        scheduled_end_time: formData.scheduled_end_time,
+      },
+      route: {
+        stops: formData.stops.map((stop, index) => {
+          const baseStop = {
+            travel_time_from_previous_stop_min:
+              stop.travel_time_from_previous_stop_min,
+            travel_distance_from_previous_stop:
+              stop.travel_distance_from_previous_stop,
+            dwell_time_minutes: stop.dwell_time_minutes,
+            approx_arrival_time: stop.approx_arrival_time,
+            approx_departure_time: stop.approx_departure_time,
+          };
 
-    // Update original data to match current
-    setOriginalData(JSON.parse(JSON.stringify(formData)));
-    dispatch(disableEditMode("tripDetails"));
-    dispatch(setUnsavedChanges({ modal: "tripDetails", hasChanges: false }));
+          // Check if this stop has been modified from its original state
+          const originalStop = originalData.stops[index];
+          const isStopModified =
+            originalStop &&
+            stop.id &&
+            (stop.name !== originalStop.name ||
+              stop.latitude !== originalStop.latitude ||
+              stop.longitude !== originalStop.longitude);
+
+          // If stop has no ID or has been modified, create new stop
+          if (!stop.id || isStopModified) {
+            return {
+              name: stop.name,
+              latitude: stop.latitude,
+              longitude: stop.longitude,
+              ...baseStop,
+            };
+          } else {
+            // If stop has ID and hasn't been modified, use existing stop
+            return {
+              stop_id: stop.id,
+              ...baseStop,
+            };
+          }
+        }),
+      },
+    };
+
+    // Call the mutation
+    updateTripMutation(
+      { tripId: tripData.id, data: payload },
+      {
+        onSuccess: () => {
+          // Update original data to match current (prevent unsaved changes warning)
+          setOriginalData(JSON.parse(JSON.stringify(formData)));
+          dispatch(disableEditMode("tripDetails"));
+          dispatch(
+            setUnsavedChanges({ modal: "tripDetails", hasChanges: false })
+          );
+          toast.success("Trip updated successfully", {
+            description: "All changes have been saved.",
+          });
+        },
+        onError: (error) => {
+          toast.error("Failed to update trip", {
+            description:
+              error.message || "An error occurred while updating the trip",
+          });
+        },
+      }
+    );
   };
 
   const validateFormData = (): string | null => {
@@ -197,12 +260,35 @@ export default function TripDetailsModal() {
 
     for (let i = 0; i < formData.stops.length; i++) {
       const stop = formData.stops[i];
-      if (!stop.name.trim()) {
-        return `Stop ${i + 1} name is required`;
+
+      // Check if this stop will be treated as a new stop (no ID or modified)
+      const originalStop = originalData.stops[i];
+      const isStopModified =
+        originalStop &&
+        stop.id &&
+        (stop.name !== originalStop.name ||
+          stop.latitude !== originalStop.latitude ||
+          stop.longitude !== originalStop.longitude);
+
+      const treatAsNewStop = !stop.id || isStopModified;
+
+      // For new stops or modified existing stops, validate required fields
+      if (treatAsNewStop) {
+        if (!stop.name.trim()) {
+          return `Stop ${i + 1} name is required`;
+        }
+        if (stop.latitude < -90 || stop.latitude > 90) {
+          return `Stop ${i + 1} latitude must be between -90 and 90`;
+        }
+        if (stop.longitude < -180 || stop.longitude > 180) {
+          return `Stop ${i + 1} longitude must be between -180 and 180`;
+        }
+        if (stop.latitude === 0 && stop.longitude === 0) {
+          return `Stop ${i + 1} coordinates are required`;
+        }
       }
-      if (stop.latitude === 0 && stop.longitude === 0) {
-        return `Stop ${i + 1} coordinates are required`;
-      }
+
+      // Validate timing and travel data for all stops
       if (i > 0) {
         if (stop.travel_time_from_previous_stop_min <= 0) {
           return `Stop ${i + 1} must have valid travel time from previous stop`;
@@ -375,17 +461,34 @@ export default function TripDetailsModal() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="is_active">Active Status</Label>
+                      <Label>Active Status</Label>
                       <div className="flex items-center gap-3 pt-2">
-                        <Switch
-                          id="is_active"
-                          checked={formData.is_active}
-                          onCheckedChange={(checked) =>
-                            setFormData({ ...formData, is_active: checked })
-                          }
-                        />
-                        <span className="text-sm font-medium">
-                          {formData.is_active ? "Active" : "Inactive"}
+                        <div
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                            tripData.is_active
+                              ? "bg-green-50 border-green-200"
+                              : "bg-red-50 border-red-200"
+                          }`}
+                        >
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              tripData.is_active
+                                ? "bg-green-500 animate-pulse"
+                                : "bg-red-500"
+                            }`}
+                          />
+                          <span
+                            className={`text-sm font-medium ${
+                              tripData.is_active
+                                ? "text-green-700"
+                                : "text-red-700"
+                            }`}
+                          >
+                            {tripData.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500 italic">
+                          (Auto-managed by system)
                         </span>
                       </div>
                     </div>
@@ -451,20 +554,29 @@ export default function TripDetailsModal() {
                     <div
                       className={`rounded-lg p-4 border ${
                         tripData.is_active
-                          ? "bg-white border-green-100"
-                          : "bg-white border-gray-200"
+                          ? "bg-green-50 border-green-200"
+                          : "bg-red-50 border-red-200"
                       }`}
                     >
                       <p className="text-xs text-gray-600 mb-1">Status</p>
-                      <p
-                        className={`text-sm font-semibold ${
-                          tripData.is_active
-                            ? "text-green-800"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {tripData.is_active ? "Active" : "Inactive"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            tripData.is_active
+                              ? "bg-green-500 animate-pulse"
+                              : "bg-red-500"
+                          }`}
+                        />
+                        <p
+                          className={`text-sm font-semibold ${
+                            tripData.is_active
+                              ? "text-green-700"
+                              : "text-red-700"
+                          }`}
+                        >
+                          {tripData.is_active ? "Active" : "Inactive"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -830,16 +942,17 @@ export default function TripDetailsModal() {
                   dispatch(disableEditMode("tripDetails"));
                 }}
                 variant="outline"
+                disabled={isUpdating}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!hasUnsavedChanges}
+                disabled={!hasUnsavedChanges || isUpdating}
                 className="gap-2"
               >
                 <Save className="h-4 w-4" />
-                Save All Changes
+                {isUpdating ? "Saving..." : "Save All Changes"}
               </Button>
             </div>
           )}

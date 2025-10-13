@@ -329,3 +329,42 @@ export interface BusDetailsResponse {
     bus: BusDetails;
   };
 }
+
+// UPDATE TRIP TYPES (PUT /api/trips/:id) //
+
+export interface UpdateTripStop {
+  // For existing stops: only stop_id is required, name/latitude/longitude will be ignored
+  stop_id?: number;
+
+  // For new stops: name, latitude, longitude are required, stop_id should not be provided
+  name?: string;
+  latitude?: number;
+  longitude?: number;
+
+  // Optional timing and travel data (for both existing and new stops)
+  travel_time_from_previous_stop_min?: number;
+  travel_distance_from_previous_stop?: number;
+  dwell_time_minutes?: number;
+  approx_arrival_time?: string; // HH:MM:SS format
+  approx_departure_time?: string; // HH:MM:SS format
+}
+
+// Request body for updating trip, route, and stop times
+
+export interface UpdateTripRequest {
+  // Trip table updates
+  trip?: {
+    trip_type?: "regular" | "express" | "limited";
+    scheduled_start_time?: string; // HH:MM:SS format
+    scheduled_end_time?: string; // HH:MM:SS format
+  };
+
+  route?: {
+    stops: UpdateTripStop[];
+  };
+}
+
+export interface UpdateTripResponse {
+  success: boolean;
+  message: string;
+}
