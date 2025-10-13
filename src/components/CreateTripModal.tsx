@@ -113,12 +113,6 @@ export default function CreateTripModal() {
       if (!stop.approx_arrival_time || !stop.approx_departure_time) {
         return `Stop ${i + 1}: Both arrival and departure times are required`;
       }
-
-      const arrivalMinutes = timeToMinutes(stop.approx_arrival_time);
-      const departureMinutes = timeToMinutes(stop.approx_departure_time);
-      if (departureMinutes <= arrivalMinutes) {
-        return `Stop ${i + 1}: Departure time must be after arrival time`;
-      }
     }
 
     return null;
