@@ -26,17 +26,6 @@ const TripsPage = () => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  const getTripTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "express":
-        return "bg-green-100 text-green-800";
-      case "limited":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-blue-100 text-blue-800";
-    }
-  };
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -110,10 +99,16 @@ const TripsPage = () => {
                     Trip ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Route
+                    Bus Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bus
+                    Bus Number
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Start Point
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    End Point
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Start Time
@@ -122,13 +117,7 @@ const TripsPage = () => {
                     End Time
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stops
                   </th>
                 </tr>
               </thead>
@@ -139,25 +128,22 @@ const TripsPage = () => {
                       {trip.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {trip.route_name}
+                      {trip.bus_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {trip.bus_number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDateTime(trip.scheduled_start_time)}
+                      {trip.start_point}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDateTime(trip.scheduled_end_time)}
+                      {trip.end_point}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTripTypeColor(
-                          trip.trip_type
-                        )}`}
-                      >
-                        {trip.trip_type}
-                      </span>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDateTime(trip.route_start_time)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDateTime(trip.route_end_time)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -169,9 +155,6 @@ const TripsPage = () => {
                       >
                         {trip.is_active ? "Active" : "Inactive"}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {trip.trip_stop_times?.length || 0} stops
                     </td>
                   </tr>
                 ))}

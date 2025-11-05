@@ -232,17 +232,15 @@ export interface TripCreationResponse {
 
 export interface TripData {
   id: number;
-  route_id: number;
-  bus_id: number;
+  bus_name: string;
   bus_number: string;
-  route_name: string;
-  scheduled_start_time: string;
-  scheduled_end_time: string;
-  trip_type: string;
+  start_point: string;
+  end_point: string;
+  route_start_time: string;
+  route_end_time: string;
+  via_details: string;
   is_active: boolean;
-  createdAt: string;
-  updatedAt: string;
-  trip_stop_times: TripStopTime[];
+  is_advertisement_available: boolean | null;
 }
 
 export interface TripListResponse {
