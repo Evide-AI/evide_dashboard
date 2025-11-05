@@ -34,10 +34,11 @@ export function useCreateBus() {
   });
 }
 
-export function useGetBuses() {
+export function useGetBuses(enabled: boolean = true) {
   return useQuery<BusData[], ApiErrorResponse>({
     queryKey: ["buses"],
     queryFn: getBuses,
+    enabled: enabled,
   });
 }
 

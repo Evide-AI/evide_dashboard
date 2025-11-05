@@ -31,7 +31,8 @@ export default function CreateTripModal() {
   );
   const [stopTimes, setStopTimes] = useState<TripStopTime[]>([]);
 
-  const { data: buses } = useGetBuses();
+  // Only fetch buses when modal is open
+  const { data: buses } = useGetBuses(isOpen);
 
   // Fetch routes for selected bus (only when in standalone mode and bus is selected)
   const {

@@ -11,7 +11,8 @@ export default function CreateRouteModal() {
   const isOpen = useAppSelector((state) => state.ui.modals.createRoute);
   const routeFlow = useAppSelector((state) => state.ui.creationFlow.route);
 
-  const { data: buses, isLoading: busesLoading } = useGetBuses();
+  // Only fetch buses when modal is open
+  const { data: buses, isLoading: busesLoading } = useGetBuses(isOpen);
   const [selectedBusIds, setSelectedBusIds] = useState<number[]>([]);
 
   const [stops, setStops] = useState<Stop[]>([
