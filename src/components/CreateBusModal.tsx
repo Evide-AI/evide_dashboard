@@ -106,12 +106,10 @@ export default function CreateBusModal() {
             {/* IMEI Number Field */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                IMEI Number *
+                IMEI Number
               </label>
               <input
                 type="text"
-                required
-                aria-required="true"
                 value={busData.imei_number}
                 onChange={handleInputChange("imei_number")}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-slate-900 placeholder:text-slate-500"

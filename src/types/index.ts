@@ -22,7 +22,7 @@ export interface AuthResponse {
 export interface BusData {
   id: number;
   bus_number: string;
-  imei_number: string;
+  imei_number: string | null;
   name: string | null;
   is_active: boolean;
   createdAt: string;
