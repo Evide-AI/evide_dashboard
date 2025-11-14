@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { X, Plus, MapPin, Clock, Route, Bus } from "lucide-react";
+import { X, Plus, Route, Bus } from "lucide-react";
 import { useProcessStops, useGetBuses } from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateRouteModal, openCreateTripModal } from "../store/slices/ui";
 import type { Stop, ProcessStopsRequest, BusData } from "../types";
 import { toast } from "sonner";
+import StopInput from "./StopInput";
 
 export default function CreateRouteModal() {
   const dispatch = useAppDispatch();
@@ -61,6 +62,12 @@ export default function CreateRouteModal() {
   ) => {
     const updatedStops = [...stops];
     updatedStops[index] = { ...updatedStops[index], [field]: value };
+    setStops(updatedStops);
+  };
+
+  const updateStopBulk = (index: number, updates: Partial<Stop>) => {
+    const updatedStops = [...stops];
+    updatedStops[index] = { ...updatedStops[index], ...updates };
     setStops(updatedStops);
   };
 
@@ -296,149 +303,30 @@ export default function CreateRouteModal() {
 
           {/* Stops Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Route Stops
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900">Route Stops</h3>
 
             {stops.map((stop, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 rounded-lg p-4 space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900">
-                    Stop {index + 1}{" "}
-                    {index === 0
-                      ? "(Starting Point)"
-                      : index === stops.length - 1
-                      ? "(End Point)"
-                      : ""}
-                  </h4>
-                  {stops.length > 2 &&
+              <div key={index}>
+                <StopInput
+                  stop={stop}
+                  index={index}
+                  onStopChange={updateStop}
+                  onStopChangeBulk={updateStopBulk}
+                  otherStops={stops}
+                  isIntermediateStop={index > 0}
+                  onRemove={
+                    stops.length > 2 &&
                     index !== 0 &&
-                    index !== stops.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeStop(index)}
-                        className="text-red-500 hover:text-red-700 text-sm"
-                      >
-                        Remove
-                      </button>
-                    )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Stop Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={stop.name}
-                      onChange={(e) =>
-                        updateStop(index, "name", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter stop name"
-                      required
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Latitude *
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={stop.latitude || ""}
-                        onChange={(e) =>
-                          updateStop(
-                            index,
-                            "latitude",
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="12.9698"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Longitude *
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={stop.longitude || ""}
-                        onChange={(e) =>
-                          updateStop(
-                            index,
-                            "longitude",
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="77.7500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {index > 0 && (
-                    <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Travel Time (minutes) *
-                        </label>
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              stop.travel_time_from_previous_stop_min || ""
-                            }
-                            onChange={(e) =>
-                              updateStop(
-                                index,
-                                "travel_time_from_previous_stop_min",
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="25"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Distance (km) *
-                        </label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          value={stop.travel_distance_from_previous_stop || ""}
-                          onChange={(e) =>
-                            updateStop(
-                              index,
-                              "travel_distance_from_previous_stop",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="15.2"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    index !== stops.length - 1
+                      ? () => removeStop(index)
+                      : undefined
+                  }
+                  canRemove={
+                    stops.length > 2 &&
+                    index !== 0 &&
+                    index !== stops.length - 1
+                  }
+                />
 
                 {/* Add stop button between stops */}
                 {index < stops.length - 1 && (

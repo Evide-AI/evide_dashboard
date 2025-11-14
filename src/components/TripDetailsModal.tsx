@@ -112,7 +112,9 @@ export default function TripDetailsModal() {
             longitude,
             sequence_order: routeStop.sequence_order,
             travel_time_from_previous_stop_min:
-              routeStop.travel_time_from_previous_stop_min || 0,
+              typeof routeStop.travel_time_from_previous_stop_min === "number"
+                ? routeStop.travel_time_from_previous_stop_min
+                : parseInt(routeStop.travel_time_from_previous_stop_min || "0"),
             travel_distance_from_previous_stop:
               typeof routeStop.travel_distance_from_previous_stop === "number"
                 ? routeStop.travel_distance_from_previous_stop

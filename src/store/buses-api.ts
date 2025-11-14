@@ -12,6 +12,7 @@ import type {
   RouteData,
   RoutesByBusResponse,
   RouteWithStops,
+  StopSearchResponse,
   TripCreationResponse,
   TripFilters,
   TripListResponse,
@@ -178,6 +179,30 @@ export const updateTrip = async (
     const response = await api.put<UpdateTripResponse>(
       `/trips/${tripId}`,
       data
+    );
+    return response.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+// Search for stops with autocomplete suggestions and pagination
+export const searchStops = async (
+  query: string,
+  page: number = 1,
+  limit: number = 15
+): Promise<StopSearchResponse> => {
+  try {
+    const params = new URLSearchParams();
+    params.append("q", query);
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+
+    const response = await api.get<StopSearchResponse>(
+      `/stops/search?${params}`
     );
     return response.data;
   } catch (err: any) {

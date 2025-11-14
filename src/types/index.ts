@@ -75,6 +75,29 @@ export interface Stop {
   longitude: number;
   travel_time_from_previous_stop_min: number;
   travel_distance_from_previous_stop: number;
+  stop_id?: number; // Optional - used when stop is selected from autocomplete in stop search
+}
+
+export interface StopSuggestion {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface StopSearchResponse {
+  success: boolean;
+  data: {
+    stops: StopSuggestion[];
+    pagination: PaginationInfo;
+  };
 }
 
 export interface ProcessStopsRequest {
@@ -174,7 +197,7 @@ export interface RouteStopData {
   route_id: number;
   stop_id: number;
   sequence_order: number;
-  travel_time_from_previous_stop_min: number;
+  travel_time_from_previous_stop_min: string;
   travel_distance_from_previous_stop: string;
   dwell_time_minutes: number;
   stop: {
@@ -187,7 +210,7 @@ export interface RouteStopData {
 export interface RouteWithStops {
   id: number;
   route_name: string | null;
-  total_distance_km: number | null;
+  total_distance_km: string | null;
   route_stops: RouteStopData[];
 }
 
@@ -272,8 +295,8 @@ export interface TripFilters {
 export interface BusDetailsRouteStop {
   id: number;
   sequence_order: number;
-  travel_time_from_previous_stop_min: number | null;
-  travel_distance_from_previous_stop: number | null;
+  travel_time_from_previous_stop_min: string;
+  travel_distance_from_previous_stop: string;
   dwell_time_minutes: number;
   stop: {
     id: number;
@@ -284,8 +307,8 @@ export interface BusDetailsRouteStop {
 
 export interface BusDetailsRoute {
   id: number;
-  route_name: string;
-  total_distance_km: number;
+  route_name: string | null;
+  total_distance_km: string;
   route_stops: BusDetailsRouteStop[]; // Ordered by sequence_order
 }
 
@@ -298,8 +321,8 @@ export interface BusDetailsTrip {
   trip_type: "regular" | "express" | "limited";
   route: {
     id: number;
-    route_name: string;
-    total_distance_km: number;
+    route_name: string | null;
+    total_distance_km: string;
     route_stops: BusDetailsRouteStop[];
   };
   trip_stop_times: TripStopTime[];
