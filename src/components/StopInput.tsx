@@ -16,6 +16,7 @@ interface StopInputProps {
   isIntermediateStop: boolean;
   onRemove?: () => void;
   canRemove?: boolean;
+  isReadOnly?: boolean;
 }
 
 export default function StopInput({
@@ -27,6 +28,7 @@ export default function StopInput({
   isIntermediateStop,
   onRemove,
   canRemove = true,
+  isReadOnly = false,
 }: StopInputProps) {
   const {
     suggestions,
@@ -71,6 +73,8 @@ export default function StopInput({
    * Handle input change with search
    */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) return;
+
     const value = e.target.value;
     setLocalInput(value);
     onStopChange(index, "name", value);
@@ -179,6 +183,9 @@ export default function StopInput({
   const getFieldClassName = (_fieldName: string, isHighlighted: boolean) => {
     const baseClass =
       "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+    if (isReadOnly) {
+      return `${baseClass} bg-gray-100 cursor-not-allowed`;
+    }
     if (isHighlighted) {
       return `${baseClass} bg-green-50 border-green-300`;
     }
@@ -186,12 +193,21 @@ export default function StopInput({
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+    <div
+      className={`border rounded-lg p-4 space-y-4 ${
+        isReadOnly ? "border-gray-300 bg-gray-50" : "border-gray-200"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-gray-900">
           Stop {index + 1} {stopLabel}
+          {isReadOnly && (
+            <span className="ml-2 text-xs text-gray-500 font-normal">
+              (Read-only)
+            </span>
+          )}
         </h4>
-        {canRemove && onRemove && (
+        {canRemove && onRemove && !isReadOnly && (
           <button
             type="button"
             onClick={onRemove}
@@ -215,18 +231,24 @@ export default function StopInput({
               value={localInput}
               onChange={handleInputChange}
               onFocus={() => {
-                if (localInput.length >= 2 && suggestions.length > 0) {
+                if (
+                  !isReadOnly &&
+                  localInput.length >= 2 &&
+                  suggestions.length > 0
+                ) {
                   setShowDropdown(true);
                 }
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Enter stop name"
               required
               autoComplete="off"
+              disabled={isReadOnly}
             />
 
             {/* Dropdown for suggestions */}
-            {showDropdown &&
+            {!isReadOnly &&
+              showDropdown &&
               (localInput.length >= 2 || suggestions.length > 0) && (
                 <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-64 overflow-y-auto pointer-events-auto">
                   {isLoading && suggestions.length === 0 && (
@@ -333,6 +355,7 @@ export default function StopInput({
               )}
               placeholder="12.9698"
               required
+              disabled={isReadOnly}
             />
           </div>
           <div>
@@ -356,6 +379,7 @@ export default function StopInput({
               )}
               placeholder="77.7500"
               required
+              disabled={isReadOnly}
             />
           </div>
         </div>
@@ -380,9 +404,10 @@ export default function StopInput({
                       parseInt(e.target.value) || 0
                     )
                   }
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="25"
                   required
+                  disabled={isReadOnly}
                 />
               </div>
             </div>
@@ -402,9 +427,10 @@ export default function StopInput({
                     parseFloat(e.target.value) || 0
                   )
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="15.2"
                 required
+                disabled={isReadOnly}
               />
             </div>
           </div>

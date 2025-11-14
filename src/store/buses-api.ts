@@ -12,6 +12,7 @@ import type {
   RouteData,
   RoutesByBusResponse,
   RouteWithStops,
+  RouteListResponse,
   StopSearchResponse,
   TripCreationResponse,
   TripFilters,
@@ -204,6 +205,26 @@ export const searchStops = async (
     const response = await api.get<StopSearchResponse>(
       `/stops/search?${params}`
     );
+    return response.data;
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+    throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+  }
+};
+
+// Get paginated list of all routes
+export const getRoutes = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<RouteListResponse> => {
+  try {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+
+    const response = await api.get<RouteListResponse>(`/routes?${params}`);
     return response.data;
   } catch (err: any) {
     if (axios.isAxiosError(err) && err.response) {

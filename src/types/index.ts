@@ -212,6 +212,27 @@ export interface RouteWithStops {
   route_name: string | null;
   total_distance_km: string | null;
   route_stops: RouteStopData[];
+  linked_buses?: Array<{
+    bus_id: number;
+    bus_number: string;
+    name: string | null;
+  }>;
+}
+
+export interface RouteListItem {
+  route_id: number;
+  route_name: string;
+}
+
+export interface RouteListResponse {
+  success: boolean;
+  data: RouteListItem[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_records: number;
+    limit: number;
+  };
 }
 
 export interface TripStopTime {

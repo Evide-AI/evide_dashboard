@@ -1,11 +1,31 @@
-import { useState } from "react";
-import { X, Plus, Route, Bus } from "lucide-react";
-import { useProcessStops, useGetBuses } from "../hooks/useBuses";
+import { useState, useEffect } from "react";
+import {
+  X,
+  Plus,
+  Route,
+  Bus,
+  ChevronDown,
+  RotateCcw,
+  Loader2,
+} from "lucide-react";
+import {
+  useProcessStops,
+  useGetBuses,
+  useGetRoutes,
+  useGetRouteWithStops,
+} from "../hooks/useBuses";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { closeCreateRouteModal, openCreateTripModal } from "../store/slices/ui";
 import type { Stop, ProcessStopsRequest, BusData } from "../types";
 import { toast } from "sonner";
 import StopInput from "./StopInput";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 export default function CreateRouteModal() {
   const dispatch = useAppDispatch();
@@ -15,6 +35,34 @@ export default function CreateRouteModal() {
   // Only fetch buses when modal is open
   const { data: buses, isLoading: busesLoading } = useGetBuses(isOpen);
   const [selectedBusIds, setSelectedBusIds] = useState<number[]>([]);
+  const [lockedBusIds, setLockedBusIds] = useState<number[]>([]); // Buses linked to selected route
+
+  // Route selection state
+  const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
+  const [routePage, setRoutePage] = useState(1);
+  const [isRouteMode, setIsRouteMode] = useState(false); // If true, stops are read-only
+  const [accumulatedRoutes, setAccumulatedRoutes] = useState<
+    Array<{ route_id: number; route_name: string }>
+  >([]);
+
+  // Fetch routes with pagination
+  const { data: routesData } = useGetRoutes(routePage, 20);
+
+  // Fetch selected route details
+  const { data: routeDetails } = useGetRouteWithStops(selectedRouteId);
+
+  // Accumulate routes when new page data arrives
+  useEffect(() => {
+    if (routesData?.data) {
+      setAccumulatedRoutes((prev) => {
+        const existingIds = new Set(prev.map((r) => r.route_id));
+        const newRoutes = routesData.data.filter(
+          (r) => !existingIds.has(r.route_id)
+        );
+        return [...prev, ...newRoutes];
+      });
+    }
+  }, [routesData]);
 
   const [stops, setStops] = useState<Stop[]>([
     {
@@ -34,6 +82,45 @@ export default function CreateRouteModal() {
   ]);
 
   const processStopsMutation = useProcessStops();
+
+  // Populate stops and buses when route details are loaded
+  useEffect(() => {
+    if (routeDetails && isRouteMode) {
+      // Map route_stops to Stop format
+      const mappedStops: Stop[] = routeDetails.route_stops.map((rs) => ({
+        name: rs.stop.name,
+        latitude:
+          typeof rs.stop.location === "object" && rs.stop.location?.coordinates
+            ? rs.stop.location.coordinates[1]
+            : 0,
+        longitude:
+          typeof rs.stop.location === "object" && rs.stop.location?.coordinates
+            ? rs.stop.location.coordinates[0]
+            : 0,
+        travel_time_from_previous_stop_min:
+          parseFloat(rs.travel_time_from_previous_stop_min) || 0,
+        travel_distance_from_previous_stop:
+          parseFloat(rs.travel_distance_from_previous_stop) || 0,
+        stop_id: rs.stop_id,
+      }));
+
+      setStops(mappedStops);
+
+      // Set linked buses as locked
+      if (routeDetails.linked_buses && routeDetails.linked_buses.length > 0) {
+        const linkedIds = routeDetails.linked_buses.map((b) => b.bus_id);
+        setLockedBusIds(linkedIds);
+        setSelectedBusIds(linkedIds);
+      } else {
+        // Backend doesn't return linked_buses data yet
+        setLockedBusIds([]);
+        toast.info("Note: Linked buses data not available", {
+          description: "You can still add buses to this route.",
+          duration: 3000,
+        });
+      }
+    }
+  }, [routeDetails, isRouteMode]);
 
   const addStop = (index: number) => {
     const newStop: Stop = {
@@ -79,12 +166,15 @@ export default function CreateRouteModal() {
       if (!stop.name.trim()) return `Stop ${i + 1} name is required`;
       if (stop.latitude === 0 && stop.longitude === 0)
         return `Stop ${i + 1} coordinates are required`;
-      if (
-        i > 0 &&
-        (stop.travel_time_from_previous_stop_min <= 0 ||
-          stop.travel_distance_from_previous_stop <= 0)
-      ) {
-        return `Stop ${i + 1} must have valid travel time and distance`;
+
+      // Skip travel time/distance validation in route mode (data from DB)
+      if (!isRouteMode && i > 0) {
+        if (
+          stop.travel_time_from_previous_stop_min <= 0 ||
+          stop.travel_distance_from_previous_stop <= 0
+        ) {
+          return `Stop ${i + 1} must have valid travel time and distance`;
+        }
       }
     }
 
@@ -180,11 +270,55 @@ export default function CreateRouteModal() {
         travel_distance_from_previous_stop: 0,
       },
     ]);
+    setSelectedBusIds([]);
+    setLockedBusIds([]);
+    setSelectedRouteId(null);
+    setIsRouteMode(false);
+    setRoutePage(1);
   };
 
   const handleClose = () => {
     resetForm();
+    setAccumulatedRoutes([]);
     dispatch(closeCreateRouteModal());
+  };
+
+  const handleRouteSelect = (routeId: number) => {
+    setSelectedRouteId(routeId);
+    setIsRouteMode(true);
+  };
+
+  const handleClearRouteSelection = () => {
+    setSelectedRouteId(null);
+    setIsRouteMode(false);
+    setLockedBusIds([]);
+    setSelectedBusIds([]);
+    // Reset to default empty stops
+    setStops([
+      {
+        name: "",
+        latitude: 0,
+        longitude: 0,
+        travel_time_from_previous_stop_min: 0,
+        travel_distance_from_previous_stop: 0,
+      },
+      {
+        name: "",
+        latitude: 0,
+        longitude: 0,
+        travel_time_from_previous_stop_min: 0,
+        travel_distance_from_previous_stop: 0,
+      },
+    ]);
+  };
+
+  const handleLoadMoreRoutes = () => {
+    if (
+      routesData?.pagination &&
+      routePage < routesData.pagination.total_pages
+    ) {
+      setRoutePage((prev) => prev + 1);
+    }
   };
 
   if (!isOpen) return null;
@@ -208,6 +342,84 @@ export default function CreateRouteModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Route Selection - Only show if NOT from bus creation */}
+          {!routeFlow.fromBusCreation && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-blue-50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Route className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Select Existing Route (Optional)
+                  </h3>
+                </div>
+                {isRouteMode && (
+                  <button
+                    type="button"
+                    onClick={handleClearRouteSelection}
+                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Clear & Create New
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Choose a route to link buses, or create a new route by entering
+                stops below
+              </p>
+
+              {!isRouteMode ? (
+                <Select
+                  onValueChange={(value) => handleRouteSelect(Number(value))}
+                >
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      <Route className="h-4 w-4 text-gray-500" />
+                      <SelectValue placeholder="Select a route..." />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {accumulatedRoutes.map((route) => (
+                      <SelectItem
+                        key={route.route_id}
+                        value={route.route_id.toString()}
+                      >
+                        {route.route_name}
+                      </SelectItem>
+                    ))}
+
+                    {/* Load More Button inside dropdown */}
+                    {routesData?.pagination &&
+                      routePage < routesData.pagination.total_pages && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleLoadMoreRoutes();
+                          }}
+                          className="w-full px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors flex items-center justify-center gap-1 border-t mt-1 pt-2"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                          Load More (Page {routePage} of{" "}
+                          {routesData.pagination.total_pages})
+                        </button>
+                      )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-sm font-medium text-gray-900">
+                    Route selected:{" "}
+                    {routeDetails?.route_name || `Route #${selectedRouteId}`}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Stop details are locked. You can only modify bus linking.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Bus Selection Section - Only show if NOT from bus creation */}
           {!routeFlow.fromBusCreation && (
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -222,60 +434,86 @@ export default function CreateRouteModal() {
               </p>
 
               {busesLoading ? (
-                <p className="text-sm text-gray-500">Loading buses...</p>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading buses...
+                </div>
               ) : buses && buses.length > 0 ? (
                 <div className="space-y-3">
-                  {/* Dropdown for bus selection */}
-                  <div className="relative">
-                    <Bus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
-                    <select
-                      onChange={(e) => {
-                        const busId = Number(e.target.value);
-                        if (busId && !selectedBusIds.includes(busId)) {
-                          toggleBusSelection(busId);
-                          e.target.value = ""; // Reset dropdown
-                        }
-                      }}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      disabled={selectedBusIds.length === buses.length}
-                    >
-                      <option value="">
-                        {selectedBusIds.length === buses.length
-                          ? "All buses selected"
-                          : "Select a bus to add..."}
-                      </option>
+                  {/* Dropdown for bus selection using Radix UI */}
+                  <Select
+                    onValueChange={(value) => {
+                      const busId = Number(value);
+                      if (busId && !selectedBusIds.includes(busId)) {
+                        toggleBusSelection(busId);
+                      }
+                    }}
+                    disabled={selectedBusIds.length === buses.length}
+                  >
+                    <SelectTrigger className="w-full">
+                      <div className="flex items-center gap-2">
+                        <Bus className="h-4 w-4 text-gray-500" />
+                        <SelectValue
+                          placeholder={
+                            selectedBusIds.length === buses.length
+                              ? "All buses selected"
+                              : "Select a bus to add..."
+                          }
+                        />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[250px]">
                       {buses
                         .filter(
                           (bus: BusData) => !selectedBusIds.includes(bus.id)
                         )
                         .map((bus: BusData) => (
-                          <option key={bus.id} value={bus.id}>
-                            {bus.bus_number} {bus.name && `(${bus.name})`}
-                          </option>
+                          <SelectItem key={bus.id} value={bus.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                {bus.bus_number}
+                              </span>
+                              {bus.name && (
+                                <span className="text-gray-500">
+                                  ({bus.name})
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
                         ))}
-                    </select>
-                  </div>
+                    </SelectContent>
+                  </Select>
 
                   {/* Selected buses as tags */}
                   {selectedBusIds.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {selectedBusIds.map((busId) => {
                         const bus = buses.find((b: BusData) => b.id === busId);
+                        const isLocked = lockedBusIds.includes(busId);
                         return bus ? (
                           <div
                             key={busId}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+                              isLocked
+                                ? "bg-gray-200 text-gray-700"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
                           >
                             <span>
                               {bus.bus_number} {bus.name && `(${bus.name})`}
+                              {isLocked && (
+                                <span className="ml-1 text-xs">(Linked)</span>
+                              )}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => toggleBusSelection(busId)}
-                              className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                            >
-                              <X size={14} />
-                            </button>
+                            {!isLocked && (
+                              <button
+                                type="button"
+                                onClick={() => toggleBusSelection(busId)}
+                                className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
                           </div>
                         ) : null;
                       })}
@@ -314,6 +552,7 @@ export default function CreateRouteModal() {
                   onStopChangeBulk={updateStopBulk}
                   otherStops={stops}
                   isIntermediateStop={index > 0}
+                  isReadOnly={isRouteMode}
                   onRemove={
                     stops.length > 2 &&
                     index !== 0 &&
@@ -328,8 +567,8 @@ export default function CreateRouteModal() {
                   }
                 />
 
-                {/* Add stop button between stops */}
-                {index < stops.length - 1 && (
+                {/* Add stop button between stops - only if not in route mode */}
+                {!isRouteMode && index < stops.length - 1 && (
                   <div className="flex justify-center pt-2">
                     <button
                       type="button"

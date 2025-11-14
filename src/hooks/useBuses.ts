@@ -4,6 +4,7 @@ import {
   createTrip,
   getRoutesByBusId,
   getBuses,
+  getRoutes,
   getRouteWithStops,
   getTrips,
   processStops,
@@ -18,6 +19,7 @@ import {
   type BusCreationResponse,
   type BusData,
   type RouteWithStops,
+  type RouteListResponse,
   type TripCreationResponse,
   type CreateTripRequest,
   type TripFilters,
@@ -104,5 +106,12 @@ export function useUpdateTrip() {
       // Invalidate bus details to refetch updated data
       queryClient.invalidateQueries({ queryKey: ["bus-details"] });
     },
+  });
+}
+
+export function useGetRoutes(page: number = 1, limit: number = 10) {
+  return useQuery<RouteListResponse, ApiErrorResponse>({
+    queryKey: ["routes-list", page, limit],
+    queryFn: () => getRoutes(page, limit),
   });
 }
