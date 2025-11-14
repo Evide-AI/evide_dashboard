@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   createBus,
   createTrip,
@@ -9,7 +10,10 @@ import {
   getTrips,
   processStops,
   updateTrip,
+  updateBus,
   type CreateBusRequest,
+  type UpdateBusRequest,
+  type BusUpdateResponse,
   getBusDetailsById,
 } from "../store/buses-api";
 import {
@@ -105,6 +109,33 @@ export function useUpdateTrip() {
     onSuccess: () => {
       // Invalidate bus details to refetch updated data
       queryClient.invalidateQueries({ queryKey: ["bus-details"] });
+    },
+  });
+}
+
+export function useUpdateBus() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    BusUpdateResponse,
+    ApiErrorResponse,
+    { busId: number; data: UpdateBusRequest }
+  >({
+    mutationFn: ({ busId, data }) => updateBus(busId, data),
+    onSuccess: (response) => {
+      // Invalidate bus details and buses list to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["bus-details"] });
+      queryClient.invalidateQueries({ queryKey: ["buses"] });
+
+      toast.success(response.message || "Bus updated successfully", {
+        description: "Changes have been saved.",
+      });
+    },
+    onError: (error) => {
+      toast.error("Failed to update bus", {
+        description:
+          error.message || "An error occurred while updating the bus",
+      });
     },
   });
 }

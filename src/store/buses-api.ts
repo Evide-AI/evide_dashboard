@@ -28,6 +28,40 @@ export interface CreateBusRequest {
   name?: string;
 }
 
+export interface UpdateBusRequest {
+  bus_number?: string;
+  imei_number?: string;
+  name?: string;
+  is_active?: boolean;
+}
+
+export interface BusUpdateResponse {
+  success: boolean;
+  message: string;
+  data: {
+    bus: BusData;
+  };
+}
+
+export const updateBus = async (
+  busId: number,
+  data: UpdateBusRequest
+): Promise<BusUpdateResponse> => {
+  try {
+    const response = await api.put<BusUpdateResponse>(`/buses/${busId}`, data);
+
+    if (response.data.success) {
+      return response.data;
+    }
+  } catch (err: any) {
+    if (axios.isAxiosError(err) && err.response) {
+      throw err.response.data as ApiErrorResponse;
+    }
+  }
+
+  throw { success: false, message: "Unknown error" } as ApiErrorResponse;
+};
+
 export const createBus = async (
   data: CreateBusRequest
 ): Promise<BusCreationResponse> => {

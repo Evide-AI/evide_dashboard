@@ -18,7 +18,6 @@ import {
   disableEditMode,
   setUnsavedChanges,
 } from "../store/slices/ui";
-import { getRouteDisplayName } from "../lib/time-utils";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
 import { useUpdateTrip } from "../hooks/useBuses";
 import type { UpdateTripRequest } from "../types";
@@ -91,41 +90,30 @@ export default function TripDetailsModal() {
 
   // Initialize form data when trip data loads
   useEffect(() => {
-    if (tripData && tripData.route.route_stops && tripData.trip_stop_times) {
-      // Merge route_stops with trip_stop_times to create editable stops
-      const mergedStops: EditableStop[] = tripData.route.route_stops.map(
-        (routeStop) => {
-          const tripStopTime = tripData.trip_stop_times.find(
-            (tst) => tst.stop_id === routeStop.stop.id
-          );
-
+    if (tripData && tripData.trip_stop_times) {
+      // Build editable stops from trip_stop_times which includes stop details
+      const mergedStops: EditableStop[] = tripData.trip_stop_times.map(
+        (tripStopTime, index) => {
           // Extract coordinates from PostGIS location
           // location.coordinates = [longitude, latitude]
-          const coordinates = routeStop.stop.location?.coordinates || [0, 0];
+          const coordinates = tripStopTime.stop?.location?.coordinates || [
+            0, 0,
+          ];
           const longitude = coordinates[0] || 0;
           const latitude = coordinates[1] || 0;
 
           return {
-            id: routeStop.stop.id,
-            name: routeStop.stop.name,
+            id: tripStopTime.stop_id,
+            name: tripStopTime.stop.name,
             latitude,
             longitude,
-            sequence_order: routeStop.sequence_order,
-            travel_time_from_previous_stop_min:
-              typeof routeStop.travel_time_from_previous_stop_min === "number"
-                ? routeStop.travel_time_from_previous_stop_min
-                : parseInt(routeStop.travel_time_from_previous_stop_min || "0"),
-            travel_distance_from_previous_stop:
-              typeof routeStop.travel_distance_from_previous_stop === "number"
-                ? routeStop.travel_distance_from_previous_stop
-                : parseFloat(
-                    routeStop.travel_distance_from_previous_stop || "0"
-                  ),
-            dwell_time_minutes: routeStop.dwell_time_minutes,
-            approx_arrival_time:
-              tripStopTime?.approx_arrival_time || "00:00:00",
+            sequence_order: index + 1,
+            travel_time_from_previous_stop_min: 0, // Not available in trip_stop_times
+            travel_distance_from_previous_stop: 0, // Not available in trip_stop_times
+            dwell_time_minutes: 0, // Not available in trip_stop_times
+            approx_arrival_time: tripStopTime.approx_arrival_time || "00:00:00",
             approx_departure_time:
-              tripStopTime?.approx_departure_time || "00:00:00",
+              tripStopTime.approx_departure_time || "00:00:00",
           };
         }
       );
@@ -389,9 +377,7 @@ export default function TripDetailsModal() {
               )}
               {!isEditMode && (
                 <p className="text-sm text-gray-600">
-                  {tripData.route.route_stops
-                    ? getRouteDisplayName(tripData.route.route_stops)
-                    : `Route #${tripData.route_id}`}
+                  {tripData.route.route_name || `Route #${tripData.route_id}`}
                 </p>
               )}
             </div>
@@ -596,30 +582,18 @@ export default function TripDetailsModal() {
                   <div>
                     <p className="text-gray-600">Route</p>
                     <p className="font-medium text-gray-900">
-                      {isEditMode
-                        ? formData.stops.length >= 2
+                      {tripData.route.route_name ||
+                        (formData.stops.length >= 2
                           ? `${formData.stops[0].name} → ${
                               formData.stops[formData.stops.length - 1].name
                             }`
-                          : "Need at least 2 stops"
-                        : tripData.route.route_stops
-                        ? getRouteDisplayName(tripData.route.route_stops)
-                        : "N/A"}
+                          : "N/A")}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-600">Total Distance</p>
                     <p className="font-medium text-gray-900">
-                      {isEditMode
-                        ? formData.stops
-                            .reduce(
-                              (sum, stop) =>
-                                sum + stop.travel_distance_from_previous_stop,
-                              0
-                            )
-                            .toFixed(2)
-                        : tripData.route.total_distance_km}{" "}
-                      km
+                      {tripData.route.total_distance_km || "N/A"} km
                     </p>
                   </div>
                 </div>

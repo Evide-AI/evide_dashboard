@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { X, Bus, Route, Calendar, Clock, Pencil, Save, RotateCcw } from "lucide-react";
+import {
+  X,
+  Bus,
+  Route,
+  Calendar,
+  Clock,
+  Pencil,
+  Save,
+  RotateCcw,
+} from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   closeBusDetailsModal,
@@ -10,7 +19,7 @@ import {
   setPendingNavigation,
   clearPendingNavigation,
 } from "../store/slices/ui";
-import { useGetBusDetails } from "../hooks/useBuses";
+import { useGetBusDetails, useUpdateBus } from "../hooks/useBuses";
 import Loading from "./Loading";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
 import type { BusDetailsTrip } from "../types";
@@ -19,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
 
 interface BusFormData {
   bus_number: string;
@@ -58,6 +66,9 @@ export default function BusDetailsModal() {
     error,
   } = useGetBusDetails(selectedBusId);
 
+  // Update bus mutation
+  const { mutate: updateBusMutation } = useUpdateBus();
+
   // Initialize form data when bus details load
   useEffect(() => {
     if (busDetails) {
@@ -82,9 +93,7 @@ export default function BusDetailsModal() {
       formData.name !== originalData.name ||
       formData.is_active !== originalData.is_active;
 
-    dispatch(
-      setUnsavedChanges({ modal: "busDetails", hasChanges })
-    );
+    dispatch(setUnsavedChanges({ modal: "busDetails", hasChanges }));
   }, [formData, originalData, isEditMode, dispatch]);
 
   const handleClose = () => {
@@ -117,15 +126,51 @@ export default function BusDetailsModal() {
   };
 
   const handleSave = async () => {
-    // Mock save - just show success
-    toast.success("Bus details updated successfully", {
-      description: "Changes have been saved.",
-    });
+    if (!selectedBusId) return;
 
-    // Update original data to match current
-    setOriginalData(formData);
-    dispatch(disableEditMode("busDetails"));
-    dispatch(setUnsavedChanges({ modal: "busDetails", hasChanges: false }));
+    // Build request payload with only changed fields
+    const payload: any = {};
+
+    if (formData.bus_number !== originalData.bus_number) {
+      payload.bus_number = formData.bus_number;
+    }
+    if (formData.imei_number !== originalData.imei_number) {
+      payload.imei_number = formData.imei_number;
+    }
+    if (formData.name !== originalData.name) {
+      payload.name = formData.name;
+    }
+    if (formData.is_active !== originalData.is_active) {
+      payload.is_active = formData.is_active;
+    }
+
+    // Only make API call if there are actual changes
+    if (Object.keys(payload).length === 0) {
+      // No changes, just close edit mode
+      setOriginalData(formData);
+      dispatch(disableEditMode("busDetails"));
+      dispatch(setUnsavedChanges({ modal: "busDetails", hasChanges: false }));
+      return;
+    }
+
+    // Call the mutation
+    updateBusMutation(
+      { busId: selectedBusId, data: payload },
+      {
+        onSuccess: () => {
+          // Update original data to match current (prevent unsaved changes warning)
+          setOriginalData(formData);
+          dispatch(disableEditMode("busDetails"));
+          dispatch(
+            setUnsavedChanges({ modal: "busDetails", hasChanges: false })
+          );
+        },
+        onError: (error) => {
+          // Error handling is done in the hook, but we can add additional logic here if needed
+          console.error("Failed to update bus:", error);
+        },
+      }
+    );
   };
 
   const handleDiscardChanges = () => {
@@ -161,9 +206,13 @@ export default function BusDetailsModal() {
             <div className="flex items-center gap-3">
               <Bus className="h-6 w-6 text-blue-600" />
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Bus Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Bus Details
+                </h2>
                 {isEditMode && (
-                  <p className="text-sm text-blue-600 font-medium">Edit Mode Active</p>
+                  <p className="text-sm text-blue-600 font-medium">
+                    Edit Mode Active
+                  </p>
                 )}
               </div>
             </div>
@@ -220,7 +269,10 @@ export default function BusDetailsModal() {
                           id="bus_number"
                           value={formData.bus_number}
                           onChange={(e) =>
-                            setFormData({ ...formData, bus_number: e.target.value })
+                            setFormData({
+                              ...formData,
+                              bus_number: e.target.value,
+                            })
                           }
                           placeholder="Enter bus number"
                         />
@@ -231,7 +283,10 @@ export default function BusDetailsModal() {
                           id="imei_number"
                           value={formData.imei_number}
                           onChange={(e) =>
-                            setFormData({ ...formData, imei_number: e.target.value })
+                            setFormData({
+                              ...formData,
+                              imei_number: e.target.value,
+                            })
                           }
                           placeholder="Enter IMEI number"
                         />
@@ -354,9 +409,16 @@ export default function BusDetailsModal() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <p className="font-semibold text-gray-900">
-                                  {trip.route.route_stops
-                                    ? getRouteDisplayName(trip.route.route_stops)
-                                    : `Route #${trip.route_id}`}
+                                  {trip.route.route_name ||
+                                    (trip.trip_stop_times.length >= 2
+                                      ? `${
+                                          trip.trip_stop_times[0].stop.name
+                                        } → ${
+                                          trip.trip_stop_times[
+                                            trip.trip_stop_times.length - 1
+                                          ].stop.name
+                                        }`
+                                      : `Route #${trip.route_id}`)}
                                 </p>
                                 <span
                                   className={`text-xs px-2 py-0.5 rounded-full font-medium ${

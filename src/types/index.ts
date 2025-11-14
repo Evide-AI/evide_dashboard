@@ -343,10 +343,20 @@ export interface BusDetailsTrip {
   route: {
     id: number;
     route_name: string | null;
-    total_distance_km: string;
-    route_stops: BusDetailsRouteStop[];
+    total_distance_km: string | null;
   };
-  trip_stop_times: TripStopTime[];
+  trip_stop_times: Array<{
+    id: number;
+    trip_id: number;
+    stop_id: number;
+    approx_arrival_time: string | null;
+    approx_departure_time: string | null;
+    stop: {
+      id: number;
+      name: string;
+      location: any;
+    };
+  }>;
 }
 
 export interface BusDetails {
