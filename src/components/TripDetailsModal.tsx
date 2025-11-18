@@ -19,7 +19,7 @@ import {
   setUnsavedChanges,
 } from "../store/slices/ui";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
-import { useUpdateTrip } from "../hooks/useBuses";
+import { useUpdateTrip, useGetRouteWithStops } from "../hooks/useBuses";
 import type { UpdateTripRequest } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +74,9 @@ export default function TripDetailsModal() {
   // Mutation hook for updating trip
   const { mutate: updateTripMutation, isPending: isUpdating } = useUpdateTrip();
 
+  // Fetch route details to get distance and dwell time info
+  const { data: routeData } = useGetRouteWithStops(tripData?.route_id ?? null);
+
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [formData, setFormData] = useState<TripFormData>({
     trip_type: "regular",
@@ -94,6 +97,11 @@ export default function TripDetailsModal() {
       // Build editable stops from trip_stop_times which includes stop details
       const mergedStops: EditableStop[] = tripData.trip_stop_times.map(
         (tripStopTime, index) => {
+          // Find corresponding route stop data if available
+          const routeStop = routeData?.route_stops?.find(
+            (rs) => rs.stop_id === tripStopTime.stop_id
+          );
+
           // Extract coordinates from PostGIS location
           // location.coordinates = [longitude, latitude]
           const coordinates = tripStopTime.stop?.location?.coordinates || [
@@ -108,9 +116,21 @@ export default function TripDetailsModal() {
             latitude,
             longitude,
             sequence_order: index + 1,
-            travel_time_from_previous_stop_min: 0, // Not available in trip_stop_times
-            travel_distance_from_previous_stop: 0, // Not available in trip_stop_times
-            dwell_time_minutes: 0, // Not available in trip_stop_times
+            travel_time_from_previous_stop_min: routeStop
+              ? typeof routeStop.travel_time_from_previous_stop_min === "number"
+                ? routeStop.travel_time_from_previous_stop_min
+                : parseFloat(
+                    routeStop.travel_time_from_previous_stop_min || "0"
+                  )
+              : 0,
+            travel_distance_from_previous_stop: routeStop
+              ? typeof routeStop.travel_distance_from_previous_stop === "number"
+                ? routeStop.travel_distance_from_previous_stop
+                : parseFloat(
+                    routeStop.travel_distance_from_previous_stop || "0"
+                  )
+              : 0,
+            dwell_time_minutes: routeStop ? routeStop.dwell_time_minutes : 0,
             approx_arrival_time: tripStopTime.approx_arrival_time || "00:00:00",
             approx_departure_time:
               tripStopTime.approx_departure_time || "00:00:00",
@@ -128,7 +148,7 @@ export default function TripDetailsModal() {
       setFormData(initialData);
       setOriginalData(JSON.parse(JSON.stringify(initialData))); // Deep copy
     }
-  }, [tripData]);
+  }, [tripData, routeData]);
 
   // Check for unsaved changes
   useEffect(() => {
@@ -179,8 +199,11 @@ export default function TripDetailsModal() {
         scheduled_end_time: formData.scheduled_end_time,
       },
       route: {
-        stops: formData.stops.map((stop, index) => {
+        stops: formData.stops.map((stop) => {
           const baseStop = {
+            name: stop.name,
+            latitude: stop.latitude,
+            longitude: stop.longitude,
             travel_time_from_previous_stop_min:
               stop.travel_time_from_previous_stop_min,
             travel_distance_from_previous_stop:
@@ -190,30 +213,7 @@ export default function TripDetailsModal() {
             approx_departure_time: stop.approx_departure_time,
           };
 
-          // Check if this stop has been modified from its original state
-          const originalStop = originalData.stops[index];
-          const isStopModified =
-            originalStop &&
-            stop.id &&
-            (stop.name !== originalStop.name ||
-              stop.latitude !== originalStop.latitude ||
-              stop.longitude !== originalStop.longitude);
-
-          // If stop has no ID or has been modified, create new stop
-          if (!stop.id || isStopModified) {
-            return {
-              name: stop.name,
-              latitude: stop.latitude,
-              longitude: stop.longitude,
-              ...baseStop,
-            };
-          } else {
-            // If stop has ID and hasn't been modified, use existing stop
-            return {
-              stop_id: stop.id,
-              ...baseStop,
-            };
-          }
+          return baseStop;
         }),
       },
     };
