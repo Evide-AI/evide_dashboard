@@ -393,12 +393,12 @@ export interface UpdateTripStop {
   latitude?: number;
   longitude?: number;
 
-  // Optional timing and travel data (for both existing and new stops)
-  travel_time_from_previous_stop_min?: number;
-  travel_distance_from_previous_stop?: number;
-  dwell_time_minutes?: number;
+  // Optional timing and route metrics (both existing and new stops)
   approx_arrival_time?: string; // HH:MM:SS format
   approx_departure_time?: string; // HH:MM:SS format
+  travel_time_from_previous_stop_min?: number; // DECIMAL(10, 2), 0 for first stop
+  travel_distance_from_previous_stop?: number; // DECIMAL(10, 2) in km, 0 for first stop
+  dwell_time_minutes?: number; // INTEGER, defaults to 1
 }
 
 // Request body for updating trip, route, and stop times
@@ -406,6 +406,7 @@ export interface UpdateTripStop {
 export interface UpdateTripRequest {
   // Trip table updates
   trip?: {
+    bus_id?: number;
     trip_type?: "regular" | "express" | "limited";
     scheduled_start_time?: string; // HH:MM:SS format
     scheduled_end_time?: string; // HH:MM:SS format
@@ -419,4 +420,13 @@ export interface UpdateTripRequest {
 export interface UpdateTripResponse {
   success: boolean;
   message: string;
+  data?: {
+    trip: any;
+    route: any;
+    routeStops: any[];
+    stops: any[];
+    tripStopTimes: any[];
+    busLinking: any[];
+  };
+  timestamp?: string;
 }

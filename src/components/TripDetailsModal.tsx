@@ -199,22 +199,18 @@ export default function TripDetailsModal() {
         scheduled_end_time: formData.scheduled_end_time,
       },
       route: {
-        stops: formData.stops.map((stop) => {
-          const baseStop = {
-            name: stop.name,
-            latitude: stop.latitude,
-            longitude: stop.longitude,
-            travel_time_from_previous_stop_min:
-              stop.travel_time_from_previous_stop_min,
-            travel_distance_from_previous_stop:
-              stop.travel_distance_from_previous_stop,
-            dwell_time_minutes: stop.dwell_time_minutes,
-            approx_arrival_time: stop.approx_arrival_time,
-            approx_departure_time: stop.approx_departure_time,
-          };
-
-          return baseStop;
-        }),
+        stops: formData.stops.map((stop) => ({
+          name: stop.name,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+          approx_arrival_time: stop.approx_arrival_time,
+          approx_departure_time: stop.approx_departure_time,
+          travel_time_from_previous_stop_min:
+            stop.travel_time_from_previous_stop_min,
+          travel_distance_from_previous_stop:
+            stop.travel_distance_from_previous_stop,
+          dwell_time_minutes: stop.dwell_time_minutes,
+        })),
       },
     };
 
