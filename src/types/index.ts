@@ -239,8 +239,8 @@ export interface TripStopTime {
   id?: number;
   stop_id: number;
   trip_id?: number;
-  approx_arrival_time: string;
-  approx_departure_time: string;
+  approx_arrival_time?: string;
+  approx_departure_time?: string;
   stop?: {
     id: number;
     name: string;
@@ -254,6 +254,7 @@ export interface CreateTripRequest {
   scheduled_start_time: string;
   scheduled_end_time: string;
   trip_type?: "regular" | "express" | "limited";
+  auto_calculate_times?: boolean;
   stops: TripStopTime[];
 }
 

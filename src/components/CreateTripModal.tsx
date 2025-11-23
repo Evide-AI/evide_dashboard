@@ -30,6 +30,7 @@ export default function CreateTripModal() {
     "regular"
   );
   const [stopTimes, setStopTimes] = useState<TripStopTime[]>([]);
+  const [useAutoCalculation, setUseAutoCalculation] = useState(false);
 
   // Only fetch buses when modal is open
   const { data: buses } = useGetBuses(isOpen);
@@ -103,16 +104,26 @@ export default function CreateTripModal() {
     if (!scheduledStartTime) return "Please select start time";
     if (!scheduledEndTime) return "Please select end time";
 
-    // Simple time comparison (convert to minutes for comparison)
     const startMinutes = timeToMinutes(scheduledStartTime);
     const endMinutes = timeToMinutes(scheduledEndTime);
     if (endMinutes <= startMinutes) return "End time must be after start time";
 
-    // Validate stop times
-    for (let i = 0; i < stopTimes.length; i++) {
-      const stop = stopTimes[i];
-      if (!stop.approx_arrival_time || !stop.approx_departure_time) {
-        return `Stop ${i + 1}: Both arrival and departure times are required`;
+    // Only validate times if in manual mode
+    if (!useAutoCalculation && stopTimes.length > 0) {
+      // Validate ordering for stops that have times
+      for (let i = 0; i < stopTimes.length; i++) {
+        const stop = stopTimes[i];
+        const hasArrival = stop.approx_arrival_time;
+        const hasDeparture = stop.approx_departure_time;
+
+        // If both times provided, validate ordering
+        if (hasArrival && hasDeparture) {
+          const arrMinutes = timeToMinutes(stop.approx_arrival_time!);
+          const depMinutes = timeToMinutes(stop.approx_departure_time!);
+          if (depMinutes <= arrMinutes) {
+            return `Stop ${i + 1}: Departure time must be after arrival time`;
+          }
+        }
       }
     }
 
@@ -137,13 +148,16 @@ export default function CreateTripModal() {
       scheduled_start_time: scheduledStartTime,
       scheduled_end_time: scheduledEndTime,
       trip_type: tripType,
-      stops: stopTimes,
+      ...(useAutoCalculation && { auto_calculate_times: true }),
+      ...(useAutoCalculation ? { stops: [] } : { stops: stopTimes }),
     };
 
     createTripMutation.mutate(tripData, {
       onSuccess: () => {
         toast.success("Trip Created Successfully", {
-          description: `Trip has been scheduled successfully.`,
+          description: `Trip has been ${
+            useAutoCalculation ? "auto-calculated and" : ""
+          } scheduled successfully.`,
           duration: 4000,
         });
         // this is invalidate and refetch trips
@@ -169,6 +183,7 @@ export default function CreateTripModal() {
     setScheduledEndTime("");
     setTripType("regular");
     setStopTimes([]);
+    setUseAutoCalculation(false);
   };
 
   const handleClose = () => {
@@ -266,6 +281,39 @@ export default function CreateTripModal() {
             </div>
           </div>
 
+          {/* Time Calculation Mode Selection */}
+          <div className="border-b pb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              How to set stop times?
+            </label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="timeMode"
+                  value="manual"
+                  checked={!useAutoCalculation}
+                  onChange={() => setUseAutoCalculation(false)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">
+                  Enter times manually
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="timeMode"
+                  value="auto"
+                  checked={useAutoCalculation}
+                  onChange={() => setUseAutoCalculation(true)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">Auto-Calcuate</span>
+              </label>
+            </div>
+          </div>
+
           {/* Route Selection Section - Only show if NOT from flow */}
           {!tripFlow.fromRouteCreation && (
             <div>
@@ -346,12 +394,12 @@ export default function CreateTripModal() {
             </div>
           </div>
 
-          {/* Stop Times Section */}
-          {selectedRoute && stopTimes.length > 0 && (
+          {/* Stop Times Section - Only show in manual mode */}
+          {selectedRoute && stopTimes.length > 0 && !useAutoCalculation && (
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                Stop Timings
+                Stop Timings (Manual Mode)
               </h3>
 
               <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -378,10 +426,10 @@ export default function CreateTripModal() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Arrival Time *
+                            Arrival Time{" "}
                           </label>
                           <input
-                            type="time" // Changed from datetime-local
+                            type="time"
                             value={stopTimes[index]?.approx_arrival_time || ""}
                             onChange={(e) =>
                               updateStopTime(
@@ -391,16 +439,15 @@ export default function CreateTripModal() {
                               )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
                           />
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Departure Time *
+                            Departure Time{" "}
                           </label>
                           <input
-                            type="time" // Changed from datetime-local
+                            type="time"
                             value={
                               stopTimes[index]?.approx_departure_time || ""
                             }
@@ -412,12 +459,27 @@ export default function CreateTripModal() {
                               )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
                           />
                         </div>
                       </div>
                     </div>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {/* Auto Calculation Info Banner */}
+          {selectedRoute && useAutoCalculation && (
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <div className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-600" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Auto-Calculation Mode</p>
+                  <p>
+                    Stop times will be calculated automatically based on route
+                    schedule and trip duration
+                  </p>
+                </div>
               </div>
             </div>
           )}
