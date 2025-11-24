@@ -485,7 +485,7 @@ export default function TripDetailsModal() {
                         id="start_time"
                         type="time"
                         step="1"
-                        value={formData.scheduled_start_time}
+                        value={formData.scheduled_start_time.substring(0, 5)}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -504,7 +504,7 @@ export default function TripDetailsModal() {
                         id="end_time"
                         type="time"
                         step="1"
-                        value={formData.scheduled_end_time}
+                        value={formData.scheduled_end_time.substring(0, 5)}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -772,7 +772,7 @@ export default function TripDetailsModal() {
                               <Input
                                 type="time"
                                 step="1"
-                                value={stop.approx_arrival_time.substring(0, 8)}
+                                value={stop.approx_arrival_time.substring(0, 5)}
                                 onChange={(e) =>
                                   updateStop(
                                     index,
@@ -790,7 +790,7 @@ export default function TripDetailsModal() {
                                 step="1"
                                 value={stop.approx_departure_time.substring(
                                   0,
-                                  8
+                                  5
                                 )}
                                 onChange={(e) =>
                                   updateStop(
