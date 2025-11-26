@@ -68,7 +68,7 @@ export default function TripDetailsModal() {
   const tripData = useAppSelector((state) => state.ui.selectedTripData);
   const isEditMode = useAppSelector((state) => state.ui.editMode.tripDetails);
   const hasUnsavedChanges = useAppSelector(
-    (state) => state.ui.unsavedChanges.tripDetails
+    (state) => state.ui.unsavedChanges.tripDetails,
   );
 
   // Mutation hook for updating trip
@@ -99,7 +99,7 @@ export default function TripDetailsModal() {
         (tripStopTime, index) => {
           // Find corresponding route stop data if available
           const routeStop = routeData?.route_stops?.find(
-            (rs) => rs.stop_id === tripStopTime.stop_id
+            (rs) => rs.stop_id === tripStopTime.stop_id,
           );
 
           // Extract coordinates from PostGIS location
@@ -120,14 +120,14 @@ export default function TripDetailsModal() {
               ? typeof routeStop.travel_time_from_previous_stop_min === "number"
                 ? routeStop.travel_time_from_previous_stop_min
                 : parseFloat(
-                    routeStop.travel_time_from_previous_stop_min || "0"
+                    routeStop.travel_time_from_previous_stop_min || "0",
                   )
               : 0,
             travel_distance_from_previous_stop: routeStop
               ? typeof routeStop.travel_distance_from_previous_stop === "number"
                 ? routeStop.travel_distance_from_previous_stop
                 : parseFloat(
-                    routeStop.travel_distance_from_previous_stop || "0"
+                    routeStop.travel_distance_from_previous_stop || "0",
                   )
               : 0,
             dwell_time_minutes: routeStop ? routeStop.dwell_time_minutes : 0,
@@ -135,7 +135,7 @@ export default function TripDetailsModal() {
             approx_departure_time:
               tripStopTime.approx_departure_time || "00:00:00",
           };
-        }
+        },
       );
 
       const initialData: TripFormData = {
@@ -223,7 +223,7 @@ export default function TripDetailsModal() {
           setOriginalData(JSON.parse(JSON.stringify(formData)));
           dispatch(disableEditMode("tripDetails"));
           dispatch(
-            setUnsavedChanges({ modal: "tripDetails", hasChanges: false })
+            setUnsavedChanges({ modal: "tripDetails", hasChanges: false }),
           );
           toast.success("Trip updated successfully", {
             description: "All changes have been saved.",
@@ -235,7 +235,7 @@ export default function TripDetailsModal() {
               error.message || "An error occurred while updating the trip",
           });
         },
-      }
+      },
     );
   };
 
@@ -307,7 +307,7 @@ export default function TripDetailsModal() {
   const updateStop = (
     index: number,
     field: keyof EditableStop,
-    value: string | number
+    value: string | number,
   ) => {
     const updatedStops = [...formData.stops];
     updatedStops[index] = { ...updatedStops[index], [field]: value };
@@ -427,7 +427,7 @@ export default function TripDetailsModal() {
                       <Select
                         value={formData.trip_type}
                         onValueChange={(
-                          value: "regular" | "express" | "limited"
+                          value: "regular" | "express" | "limited",
                         ) => setFormData({ ...formData, trip_type: value })}
                       >
                         <SelectTrigger
@@ -486,12 +486,16 @@ export default function TripDetailsModal() {
                         type="time"
                         step="1"
                         value={formData.scheduled_start_time.substring(0, 5)}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const formattedValue =
+                            value.length === 5 ? value + ":00" : value;
+
                           setFormData({
                             ...formData,
-                            scheduled_start_time: e.target.value + ":00",
-                          })
-                        }
+                            scheduled_start_time: formattedValue,
+                          });
+                        }}
                         className="w-full"
                       />
                     </div>
@@ -505,12 +509,16 @@ export default function TripDetailsModal() {
                         type="time"
                         step="1"
                         value={formData.scheduled_end_time.substring(0, 5)}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const formattedValue =
+                            value.length === 5 ? value + ":00" : value;
+
                           setFormData({
                             ...formData,
-                            scheduled_end_time: e.target.value + ":00",
-                          })
-                        }
+                            scheduled_end_time: formattedValue,
+                          });
+                        }}
                         className="w-full"
                       />
                     </div>
@@ -628,8 +636,8 @@ export default function TripDetailsModal() {
                                 {index === 0
                                   ? "(Starting Point)"
                                   : index === formData.stops.length - 1
-                                  ? "(Destination)"
-                                  : "(Intermediate Stop)"}
+                                    ? "(Destination)"
+                                    : "(Intermediate Stop)"}
                               </span>
                             </h4>
                             {formData.stops.length > 2 &&
@@ -673,7 +681,7 @@ export default function TripDetailsModal() {
                                   updateStop(
                                     index,
                                     "latitude",
-                                    parseFloat(e.target.value) || 0
+                                    parseFloat(e.target.value) || 0,
                                   )
                                 }
                                 placeholder="12.9698"
@@ -690,7 +698,7 @@ export default function TripDetailsModal() {
                                   updateStop(
                                     index,
                                     "longitude",
-                                    parseFloat(e.target.value) || 0
+                                    parseFloat(e.target.value) || 0,
                                   )
                                 }
                                 placeholder="77.7500"
@@ -716,7 +724,7 @@ export default function TripDetailsModal() {
                                       updateStop(
                                         index,
                                         "travel_time_from_previous_stop_min",
-                                        parseInt(e.target.value) || 0
+                                        parseInt(e.target.value) || 0,
                                       )
                                     }
                                     placeholder="25"
@@ -737,7 +745,7 @@ export default function TripDetailsModal() {
                                       updateStop(
                                         index,
                                         "travel_distance_from_previous_stop",
-                                        parseFloat(e.target.value) || 0
+                                        parseFloat(e.target.value) || 0,
                                       )
                                     }
                                     placeholder="15.2"
@@ -758,7 +766,7 @@ export default function TripDetailsModal() {
                                   updateStop(
                                     index,
                                     "dwell_time_minutes",
-                                    parseInt(e.target.value) || 0
+                                    parseInt(e.target.value) || 0,
                                   )
                                 }
                                 placeholder="5"
@@ -773,13 +781,17 @@ export default function TripDetailsModal() {
                                 type="time"
                                 step="1"
                                 value={stop.approx_arrival_time.substring(0, 5)}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Only add :00 if the value is HH:MM (length 5)
+                                  const formattedValue =
+                                    value.length === 5 ? value + ":00" : value;
                                   updateStop(
                                     index,
                                     "approx_arrival_time",
-                                    e.target.value + ":00"
-                                  )
-                                }
+                                    formattedValue,
+                                  );
+                                }}
                                 required
                               />
                             </div>
@@ -790,15 +802,19 @@ export default function TripDetailsModal() {
                                 step="1"
                                 value={stop.approx_departure_time.substring(
                                   0,
-                                  5
+                                  5,
                                 )}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Only add :00 if the value is HH:MM (length 5)
+                                  const formattedValue =
+                                    value.length === 5 ? value + ":00" : value;
                                   updateStop(
                                     index,
                                     "approx_departure_time",
-                                    e.target.value + ":00"
-                                  )
-                                }
+                                    formattedValue,
+                                  );
+                                }}
                                 required
                               />
                             </div>
@@ -841,8 +857,8 @@ export default function TripDetailsModal() {
                               index === 0
                                 ? "bg-green-500 shadow-lg shadow-green-200"
                                 : index === tripData.trip_stop_times.length - 1
-                                ? "bg-purple-500 shadow-lg shadow-purple-200"
-                                : "bg-blue-500 shadow-md shadow-blue-200"
+                                  ? "bg-purple-500 shadow-lg shadow-purple-200"
+                                  : "bg-blue-500 shadow-md shadow-blue-200"
                             }`}
                           >
                             <span className="text-white font-bold text-sm">
