@@ -200,6 +200,7 @@ export default function TripDetailsModal() {
       },
       route: {
         stops: formData.stops.map((stop) => ({
+          stop_id: stop.id,
           name: stop.name,
           latitude: stop.latitude,
           longitude: stop.longitude,
